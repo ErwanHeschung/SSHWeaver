@@ -1,9 +1,11 @@
 import "./App.css";
+import { Shell } from "@components/Shell";
 
 function App() {
   return (
-    <main className="container">
-    </main>
+    <Shell>
+      <div className="p-4" />
+    </Shell>
   );
 }
 

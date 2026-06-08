@@ -1,0 +1,219 @@
+@theme inline {
+  /* Typography ------------------------------------------------------------ */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", ui-monospace, "SF Mono", Menlo,
+    Consolas, monospace;
+
+  /* Surfaces -------------------------------------------------------------- */
+  --color-background: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+
+  /* Borders --------------------------------------------------------------- */
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  /* Text ------------------------------------------------------------------ */
+  --color-foreground: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  /* Accent (purple) ------------------------------------------------------- */
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-foreground: var(--accent-fg);
+
+  /* Status ---------------------------------------------------------------- */
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+  --color-info: var(--info);
+  --color-info-subtle: var(--info-subtle);
+
+  /* Radius ---------------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  /* Elevation ------------------------------------------------------------- */
+  --shadow-sm: 0 1px 2px var(--shadow-color);
+  --shadow-md: 0 4px 12px var(--shadow-color);
+  --shadow-lg: 0 8px 24px var(--shadow-color);
+  /* Geeky neon edge for active/connected elements (mostly visible in dark) */
+  --shadow-glow: 0 0 0 1px var(--accent), 0 0 12px var(--glow);
+}
+
+/* ----------------------------------------------------------------------------
+   Light theme (default)
+   -------------------------------------------------------------------------- */
+:root,
+:root[data-theme="light"] {
+  --bg: #f7f7f8;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f1f1f3;
+
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+
+  --fg: #18181b;
+  --muted: #71717a;
+  --faint: #a1a1aa;
+
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-subtle: #f5f3ff;
+  --accent-fg: #ffffff;
+
+  --success: #16a34a;
+  --success-subtle: #f0fdf4;
+  --warning: #d97706;
+  --warning-subtle: #fffbeb;
+  --danger: #dc2626;
+  --danger-subtle: #fef2f2;
+  --info: #0891b2;
+  --info-subtle: #ecfeff;
+
+  --shadow-color: rgb(0 0 0 / 0.08);
+  --glow: rgb(124 58 237 / 0.18);
+
+  color-scheme: light;
+}
+
+/* ----------------------------------------------------------------------------
+   Dark theme — violet-black neutrals so the purple feels native
+   -------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --bg: #141417;
+  --surface: #1b1b21;
+  --surface-elevated: #24242c;
+  --surface-hover: #2a2a32;
+
+  --border: #2d2d36;
+  --border-strong: #3a3a44;
+
+  --fg: #f4f4f5;
+  --muted: #a1a1aa;
+  --faint: #6b6b74;
+
+  --accent: #a78bfa;
+  --accent-hover: #c4b5fd;
+  --accent-subtle: #2e1065;
+  --accent-fg: #1b1b21;
+
+  --success: #22c55e;
+  --success-subtle: #0e2a18;
+  --warning: #f59e0b;
+  --warning-subtle: #2c2008;
+  --danger: #ef4444;
+  --danger-subtle: #2c1212;
+  --info: #22d3ee;
+  --info-subtle: #082c33;
+
+  /* No soft shadows in dark — depth comes from surface tone. */
+  --shadow-color: rgb(0 0 0 / 0.4);
+  --glow: rgb(167 139 250 / 0.28);
+
+  color-scheme: dark;
+}
+
+/* ----------------------------------------------------------------------------
+   Base layer
+   -------------------------------------------------------------------------- */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 13px; /* dense, file-manager baseline */
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  /* Keyboard focus ring uses the accent, app-wide */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  /* Thin, themed scrollbars (geeky terminal feel) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+    background-clip: content-box;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Component primitives — encode the spec for things used everywhere
+   -------------------------------------------------------------------------- */
+@layer components {
+  /* Connection status dot. Compose with a color: <span class="status-dot bg-success" /> */
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    flex: none;
+  }
+  /* Connecting state: amber + pulse */
+  .status-dot--pulse {
+    animation: ssh-pulse 1.5s ease-in-out infinite;
+  }
+  /* Idle / saved: hollow ring instead of a solid fill */
+  .status-dot--idle {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--faint);
+  }
+
+  @keyframes ssh-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status-dot--pulse {
+      animation: none;
+    }
+  }
+}

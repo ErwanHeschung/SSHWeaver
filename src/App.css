@@ -1,20 +1,2 @@
 @import "tailwindcss";
-
-:root[data-theme="dark"] {
-  color: #f6f6f6;
-  background-color: #2f2f2f;
-}
-
-:root[data-theme="dark"] a:hover {
-  color: #24c8db;
-}
-
-:root[data-theme="dark"] input,
-:root[data-theme="dark"] button {
-  color: #ffffff;
-  background-color: #0f0f0f98;
-}
-
-:root[data-theme="dark"] button:active {
-  background-color: #0f0f0f69;
-}
+@import "@/theme/tokens.css";
