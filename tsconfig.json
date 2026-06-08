@@ -11,14 +11,34 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "verbatimModuleSyntax": true,
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting */
+    /* Path aliases (resolved relative to this tsconfig; no baseUrl needed on TS 6+) */
+    "paths": {
+      "@/*": ["./src/*"],
+      "@repositories/*": ["./src/repositories/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@services/*": ["./src/services/*"],
+      "@screens/*": ["./src/screens/*"],
+      "@components/*": ["./src/components/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@theme/*": ["./src/theme/*"],
+      "@types/*": ["./src/types/*"]
+    },
+
+    /* Linting — fail the build on dead code, unsafe access, and sloppy control flow */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "allowUnreachableCode": false,
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
