@@ -21,6 +21,8 @@ export default defineConfig(async () => ({
       "@hooks": resolve("./src/hooks"),
       "@services": resolve("./src/services"),
       "@screens": resolve("./src/screens"),
+      "@layouts": resolve("./src/layouts"),
+      "@stores": resolve("./src/stores"),
       "@components": resolve("./src/components"),
       "@utils": resolve("./src/utils"),
       "@theme": resolve("./src/theme"),

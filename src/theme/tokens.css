@@ -154,29 +154,25 @@
     outline: 2px solid var(--accent);
     outline-offset: 1px;
   }
+}
 
-  /* Thin, themed scrollbars (geeky terminal feel) */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
-  }
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
-    border-radius: 9999px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--muted);
-    background-clip: content-box;
-  }
+/* ----------------------------------------------------------------------------
+   OverlayScrollbars theme — custom DOM scrollbar (no native arrows), accent
+   purple handle, auto-hiding. Used wherever native WebView2 scrollbars fall
+   short. Applied via options.scrollbars.theme = "os-theme-accent".
+   -------------------------------------------------------------------------- */
+.os-theme-accent {
+  --os-size: 10px;
+  --os-padding-perpendicular: 2px;
+  --os-padding-axis: 2px;
+  --os-track-bg: transparent;
+  --os-track-bg-hover: transparent;
+  --os-track-bg-active: transparent;
+  --os-handle-border-radius: 9999px;
+  --os-handle-bg: color-mix(in srgb, var(--accent) 60%, transparent);
+  --os-handle-bg-hover: var(--accent);
+  --os-handle-bg-active: var(--accent-hover);
+  --os-handle-min-size: 24px;
 }
 
 /* ----------------------------------------------------------------------------
