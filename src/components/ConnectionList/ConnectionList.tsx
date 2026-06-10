@@ -5,6 +5,7 @@ import { ConnectionStatus } from "@/types/connection";
 import type { Connection } from "@/types/connection";
 import { useConnectionStore } from "@stores/useConnectionStore";
 import { ConnectionItem } from "./ConnectionItem";
+import { filterConnections } from "./search";
 
 const ROW_HEIGHT = 56;
 const OVERSCAN = 6;
@@ -23,6 +24,7 @@ function compareConnections(a: Connection, b: Connection): number {
 
 export function ConnectionList() {
   const connections = useConnectionStore((s) => s.connections);
+  const query = useConnectionStore((s) => s.query);
   const rootRef = useRef<HTMLDivElement>(null);
   const [scroller, setScroller] = useState<HTMLElement | null>(null);
 
@@ -42,8 +44,8 @@ export function ConnectionList() {
   }, [initialize, getInstance]);
 
   const sorted = useMemo(
-    () => [...connections].sort(compareConnections),
-    [connections],
+    () => [...filterConnections(connections, query)].sort(compareConnections),
+    [connections, query],
   );
 
   const virtualizer = useVirtualizer({
@@ -56,25 +58,31 @@ export function ConnectionList() {
 
   return (
     <div ref={rootRef} className="h-full overflow-y-auto">
-      <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
-        {virtualizer.getVirtualItems().map((virtualRow) => {
-          const connection = sorted[virtualRow.index]!;
-          return (
-            <ConnectionItem
-              key={virtualRow.key}
-              connection={connection}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: virtualRow.size,
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            />
-          );
-        })}
-      </div>
+      {sorted.length === 0 ? (
+        <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted">
+          No connections match “{query}”.
+        </div>
+      ) : (
+        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const connection = sorted[virtualRow.index]!;
+            return (
+              <ConnectionItem
+                key={virtualRow.key}
+                connection={connection}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: virtualRow.size,
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

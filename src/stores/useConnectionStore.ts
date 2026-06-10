@@ -4,7 +4,6 @@ import type { Connection } from "@/types/connection";
 
 const STATUSES = Object.values(ConnectionStatus);
 
-// Placeholder seed until connections are loaded from storage / the backend.
 const SEED: Connection[] = Array.from({ length: 500 }, (_, i) => ({
   id: String(i),
   name: `server-${i.toString().padStart(3, "0")}`,
@@ -18,8 +17,11 @@ const SEED: Connection[] = Array.from({ length: 500 }, (_, i) => ({
 interface ConnectionState {
   connections: Connection[];
   selectedId?: string;
+  query: string;
 
   select: (id: string) => void;
+  setQuery: (query: string) => void;
+  add: () => void;
   connect: (connection: Connection) => void;
   edit: (connection: Connection) => void;
   remove: (id: string) => void;
@@ -29,10 +31,13 @@ interface ConnectionState {
 export const useConnectionStore = create<ConnectionState>((set) => ({
   connections: SEED,
   selectedId: undefined,
+  query: "",
 
   select: (id) => set({ selectedId: id }),
+  setQuery: (query) => set({ query }),
 
   // TODO: wire to the Tauri backend (invoke) once the SSH layer exists.
+  add: () => console.log("add connection"),
   connect: (connection) => console.log("connect", connection.id),
   edit: (connection) => console.log("edit", connection.id),
 
