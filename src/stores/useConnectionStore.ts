@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { ConnectionStatus } from "@/types/connection";
 import type { Connection } from "@/types/connection";
+import { useSessionStore } from "@stores/useSessionStore";
 
 const STATUSES = Object.values(ConnectionStatus);
 
@@ -21,6 +22,7 @@ interface ConnectionState {
 
   select: (id: string) => void;
   setQuery: (query: string) => void;
+  setStatus: (id: string, status: ConnectionStatus) => void;
   add: () => void;
   connect: (connection: Connection) => void;
   edit: (connection: Connection) => void;
@@ -36,10 +38,27 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
   select: (id) => set({ selectedId: id }),
   setQuery: (query) => set({ query }),
 
+  setStatus: (id, status) =>
+    set((state) => ({
+      connections: state.connections.map((c) =>
+        c.id === id ? { ...c, status } : c,
+      ),
+    })),
+
   // TODO: wire to the Tauri backend (invoke) once the SSH layer exists.
   add: () => console.log("add connection"),
-  connect: (connection) => console.log("connect", connection.id),
   edit: (connection) => console.log("edit", connection.id),
+
+  connect: (connection) => {
+    set((state) => ({
+      connections: state.connections.map((c) =>
+        c.id === connection.id
+          ? { ...c, status: ConnectionStatus.Connecting }
+          : c,
+      ),
+    }));
+    useSessionStore.getState().open(connection);
+  },
 
   remove: (id) =>
     set((state) => ({

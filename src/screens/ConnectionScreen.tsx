@@ -1,6 +1,7 @@
 import { SidebarLayout } from "@layouts/SidebarLayout";
 import { ConnectionList } from "@components/ConnectionList/ConnectionList";
 import { ConnectionToolbar } from "@components/ConnectionList/ConnectionToolbar";
+import { TerminalPane } from "@components/Terminal/TerminalPane";
 
 export function ConnectionScreen() {
   return (
@@ -14,7 +15,7 @@ export function ConnectionScreen() {
         </div>
       }
     >
-      <div className="p-4">Main content</div>
+      <TerminalPane />
     </SidebarLayout>
   );
 }

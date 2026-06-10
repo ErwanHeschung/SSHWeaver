@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 
 interface SidebarLayoutProps {
   sidebar: ReactNode;
@@ -14,16 +13,7 @@ export function SidebarLayout({ sidebar, children }: Readonly<SidebarLayoutProps
         {sidebar}
       </aside>
 
-      <OverlayScrollbarsComponent
-        element="section"
-        defer
-        options={{
-          scrollbars: { theme: "os-theme-accent", autoHide: "leave", autoHideDelay: 600 },
-        }}
-        className="min-h-0 flex-1"
-      >
-        {children}
-      </OverlayScrollbarsComponent>
+      <section className="min-h-0 flex-1 overflow-hidden">{children}</section>
     </div>
   );
 }
