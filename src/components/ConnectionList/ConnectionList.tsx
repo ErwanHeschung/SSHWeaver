@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useOverlayScrollbars } from "overlayscrollbars-react";
 import { ConnectionStatus } from "@/types/connection";
@@ -23,6 +24,7 @@ function compareConnections(a: Connection, b: Connection): number {
 }
 
 export function ConnectionList() {
+  const { t } = useTranslation();
   const connections = useConnectionStore((s) => s.connections);
   const query = useConnectionStore((s) => s.query);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -60,7 +62,7 @@ export function ConnectionList() {
     <div ref={rootRef} className="h-full overflow-y-auto">
       {sorted.length === 0 ? (
         <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted">
-          No connections match “{query}”.
+          {t("search.empty", { query })}
         </div>
       ) : (
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>

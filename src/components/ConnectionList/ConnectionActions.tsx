@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { MoreVertical, Pencil, PlugZap, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { Connection } from "@/types/connection";
 import { useConnectionStore } from "@stores/useConnectionStore";
 
@@ -10,6 +11,7 @@ interface ConnectionActionsProps {
 }
 
 export function ConnectionActions({ connection }: Readonly<ConnectionActionsProps>) {
+  const { t } = useTranslation();
   const connect = useConnectionStore((s) => s.connect);
   const edit = useConnectionStore((s) => s.edit);
   const remove = useConnectionStore((s) => s.remove);
@@ -64,10 +66,10 @@ export function ConnectionActions({ connection }: Readonly<ConnectionActionsProp
       <button
         ref={triggerRef}
         type="button"
-        aria-label="Actions"
+        aria-label={t("actions.label")}
         aria-haspopup="menu"
         aria-expanded={open}
-        title="Actions"
+        title={t("actions.label")}
         onClick={toggle}
         className="relative flex-none rounded p-1 text-muted transition-colors hover:bg-surface-elevated hover:text-foreground"
       >
@@ -89,15 +91,15 @@ export function ConnectionActions({ connection }: Readonly<ConnectionActionsProp
           >
             <MenuItem onClick={run(() => connect(connection))}>
               <PlugZap className="size-4" />
-              Connect
+              {t("actions.connect")}
             </MenuItem>
             <MenuItem onClick={run(() => edit(connection))}>
               <Pencil className="size-3.5" />
-              Edit
+              {t("actions.edit")}
             </MenuItem>
             <MenuItem onClick={run(() => remove(connection.id))} danger>
               <Trash2 className="size-3.5" />
-              Delete
+              {t("actions.delete")}
             </MenuItem>
           </div>,
           document.body,

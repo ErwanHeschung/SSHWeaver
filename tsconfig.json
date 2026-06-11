@@ -24,6 +24,7 @@
       "@screens/*": ["./src/screens/*"],
       "@layouts/*": ["./src/layouts/*"],
       "@stores/*": ["./src/stores/*"],
+      "@i18n/*": ["./src/i18n/*"],
       "@components/*": ["./src/components/*"],
       "@utils/*": ["./src/utils/*"],
       "@theme/*": ["./src/theme/*"],

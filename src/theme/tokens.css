@@ -149,6 +149,20 @@
     color: var(--accent-fg);
   }
 
+  /* Tailwind v4 / modern browsers reset buttons to `cursor: default`.
+     Restore the pointer for interactive controls app-wide. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
   /* Keyboard focus ring uses the accent, app-wide */
   :focus-visible {
     outline: 2px solid var(--accent);

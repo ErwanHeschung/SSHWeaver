@@ -1,12 +1,16 @@
 import "./App.css";
-import { Shell } from "@components/Shell";
-import { ConnectionScreen } from "@screens/ConnectionScreen";
+import { Route, Routes } from "react-router-dom";
+import { AppLayout } from "@layouts/AppLayout";
+import { SettingsScreen } from "@components/Settings/SettingsScreen";
 
 function App() {
   return (
-    <Shell>
-      <ConnectionScreen />
-    </Shell>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route index element={null} />
+        <Route path="settings" element={<SettingsScreen />} />
+      </Route>
+    </Routes>
   );
 }
 

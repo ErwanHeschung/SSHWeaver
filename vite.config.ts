@@ -23,6 +23,7 @@ export default defineConfig(async () => ({
       "@screens": resolve("./src/screens"),
       "@layouts": resolve("./src/layouts"),
       "@stores": resolve("./src/stores"),
+      "@i18n": resolve("./src/i18n"),
       "@components": resolve("./src/components"),
       "@utils": resolve("./src/utils"),
       "@theme": resolve("./src/theme"),

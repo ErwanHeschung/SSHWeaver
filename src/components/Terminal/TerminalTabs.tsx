@@ -1,5 +1,6 @@
 import type { MouseEvent } from "react";
 import { X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { SessionStatus } from "@/types/session";
 import type { TerminalSession } from "@/types/session";
 import { useSessionStore } from "@stores/useSessionStore";
@@ -39,6 +40,7 @@ interface TabProps {
 }
 
 function Tab({ session, active, onSelect, onClose }: Readonly<TabProps>) {
+  const { t } = useTranslation();
   const close = (e: MouseEvent) => {
     e.stopPropagation();
     onClose();
@@ -61,8 +63,8 @@ function Tab({ session, active, onSelect, onClose }: Readonly<TabProps>) {
       <span className="min-w-0 flex-1 truncate">{session.title}</span>
       <button
         type="button"
-        aria-label={`Close ${session.title}`}
-        title="Close"
+        aria-label={t("tabs.closeNamed", { title: session.title })}
+        title={t("tabs.close")}
         onClick={close}
         className={`flex-none rounded p-0.5 text-faint transition-opacity hover:bg-surface-elevated hover:text-foreground group-hover:opacity-100 ${
           active ? "opacity-100" : "opacity-0"

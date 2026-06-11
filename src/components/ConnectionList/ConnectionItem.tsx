@@ -1,5 +1,6 @@
 import type { CSSProperties, MouseEvent } from "react";
 import { Heart } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ConnectionStatus } from "@/types/connection";
 import type { Connection } from "@/types/connection";
 import { useConnectionStore } from "@stores/useConnectionStore";
@@ -28,8 +29,12 @@ const STATUS_STYLE: Record<ConnectionStatus, StatusStyle> = {
 };
 
 export function ConnectionItem({ connection, style }: Readonly<ConnectionItemProps>) {
+  const { t } = useTranslation();
   const { id, name, host, port, username, status, isFavorite } = connection;
   const statusStyle = STATUS_STYLE[status];
+  const favoriteLabel = isFavorite
+    ? t("connection.removeFavorite")
+    : t("connection.addFavorite");
 
   const selected = useConnectionStore((s) => s.selectedId === id);
   const select = useConnectionStore((s) => s.select);
@@ -55,7 +60,7 @@ export function ConnectionItem({ connection, style }: Readonly<ConnectionItemPro
     >
       <button
         type="button"
-        aria-label={`Select ${name}`}
+        aria-label={t("connection.select", { name })}
         aria-pressed={selected}
         onClick={() => select(id)}
         className="absolute inset-0 focus-visible:-outline-offset-2"
@@ -70,8 +75,8 @@ export function ConnectionItem({ connection, style }: Readonly<ConnectionItemPro
 
       <button
         type="button"
-        aria-label={isFavorite ? "Remove favorite" : "Add favorite"}
-        title={isFavorite ? "Remove favorite" : "Add favorite"}
+        aria-label={favoriteLabel}
+        title={favoriteLabel}
         onClick={toggleFavorite}
         className={`relative flex-none rounded p-1 transition-colors hover:bg-surface-elevated ${
           isFavorite ? "text-danger" : "text-faint hover:text-danger"

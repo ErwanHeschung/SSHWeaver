@@ -1,9 +1,11 @@
 import { TerminalSquare } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useSessionStore } from "@stores/useSessionStore";
 import { TerminalTabs } from "./TerminalTabs";
 import { TerminalView } from "./TerminalView";
 
 export function TerminalPane() {
+  const { t } = useTranslation();
   const sessions = useSessionStore((s) => s.sessions);
   const activeId = useSessionStore((s) => s.activeId);
 
@@ -12,10 +14,8 @@ export function TerminalPane() {
       <div className="flex h-full flex-col items-center justify-center gap-3 text-center text-muted">
         <TerminalSquare className="size-10 text-faint" strokeWidth={1.5} />
         <div>
-          <p className="text-foreground">No active session</p>
-          <p className="text-sm">
-            Connect to a server from the sidebar to open a terminal.
-          </p>
+          <p className="text-foreground">{t("terminal.empty")}</p>
+          <p className="text-sm">{t("terminal.emptyHint")}</p>
         </div>
       </div>
     );

@@ -1,7 +1,9 @@
 import { Plus, Search, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useConnectionStore } from "@stores/useConnectionStore";
 
 export function ConnectionToolbar() {
+  const { t } = useTranslation();
   const query = useConnectionStore((s) => s.query);
   const setQuery = useConnectionStore((s) => s.setQuery);
   const add = useConnectionStore((s) => s.add);
@@ -18,15 +20,15 @@ export function ConnectionToolbar() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-          placeholder="Search connections…"
-          aria-label="Search connections"
+          placeholder={t("search.placeholder")}
+          aria-label={t("search.label")}
           className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-8 text-sm text-foreground transition-colors placeholder:text-faint focus:border-accent focus:outline-none"
         />
         {query && (
           <button
             type="button"
-            aria-label="Clear search"
-            title="Clear search"
+            aria-label={t("search.clear")}
+            title={t("search.clear")}
             onClick={() => setQuery("")}
             className="absolute right-1.5 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded text-faint transition-colors hover:bg-surface-hover hover:text-foreground"
           >
@@ -37,8 +39,8 @@ export function ConnectionToolbar() {
 
       <button
         type="button"
-        aria-label="Add connection"
-        title="Add connection"
+        aria-label={t("actions.add")}
+        title={t("actions.add")}
         onClick={add}
         className="flex size-8 flex-none items-center justify-center rounded-md bg-accent text-accent-foreground transition-colors hover:bg-accent-hover"
       >

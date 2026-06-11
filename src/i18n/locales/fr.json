@@ -1,0 +1,62 @@
+{
+  "search": {
+    "placeholder": "Rechercher des connexions…",
+    "label": "Rechercher des connexions",
+    "clear": "Effacer la recherche",
+    "empty": "Aucune connexion ne correspond à « {{query}} »."
+  },
+  "actions": {
+    "label": "Actions",
+    "connect": "Connecter",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "add": "Ajouter une connexion"
+  },
+  "connection": {
+    "select": "Sélectionner {{name}}",
+    "addFavorite": "Ajouter aux favoris",
+    "removeFavorite": "Retirer des favoris"
+  },
+  "theme": {
+    "toLight": "Passer au thème clair",
+    "toDark": "Passer au thème sombre"
+  },
+  "language": {
+    "toFrench": "Passer en français",
+    "toEnglish": "Switch to English"
+  },
+  "tabs": {
+    "close": "Fermer",
+    "closeNamed": "Fermer {{title}}"
+  },
+  "terminal": {
+    "empty": "Aucune session active",
+    "emptyHint": "Connectez-vous à un serveur depuis la barre latérale pour ouvrir un terminal.",
+    "connecting": "Connexion à {{host}}:{{port}}…",
+    "connected": "✓ Connecté — session simulée (pas encore de vrai SSH)",
+    "helpHint": "Tapez « help » pour voir les commandes disponibles.",
+    "available": "Disponibles : help, whoami, hostname, clear, exit",
+    "notFound": "{{command}} : commande introuvable"
+  },
+  "settings": {
+    "open": "Paramètres",
+    "close": "Fermer",
+    "appearance": {
+      "nav": "Apparence",
+      "title": "Apparence",
+      "themeLabel": "Thème",
+      "themeHint": "Choisissez l’apparence de SSHWeaver. « Système » suit votre système d’exploitation.",
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
+    "language": {
+      "nav": "Langue",
+      "title": "Langue",
+      "label": "Langue d’affichage",
+      "hint": "Sélectionnez la langue utilisée dans toute l’application.",
+      "english": "English",
+      "french": "Français"
+    }
+  }
+}

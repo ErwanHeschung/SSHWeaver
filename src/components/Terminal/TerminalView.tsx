@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
+import i18n from "@i18n/index";
 import { ConnectionStatus } from "@/types/connection";
 import type { TerminalSession } from "@/types/session";
 import { useConnectionStore } from "@stores/useConnectionStore";
@@ -53,7 +54,7 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
         return;
       }
       if (command === "help") {
-        term.write("\r\nAvailable: help, whoami, hostname, clear, exit");
+        term.write(`\r\n${i18n.t("terminal.available")}`);
       } else if (command === "whoami") {
         term.write(`\r\n${session.username}`);
       } else if (command === "hostname") {
@@ -62,7 +63,7 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
         useSessionStore.getState().close(session.id);
         return;
       } else if (command !== "") {
-        term.write(`\r\n${command}: command not found`);
+        term.write(`\r\n${i18n.t("terminal.notFound", { command })}`);
       }
       term.write(`\r\n${prompt}`);
     };
@@ -90,10 +91,12 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
       }
     });
 
-    term.writeln(`${DIM}Connecting to ${session.host}:${session.port}…${RESET}`);
+    term.writeln(
+      `${DIM}${i18n.t("terminal.connecting", { host: session.host, port: session.port })}${RESET}`,
+    );
     const handshake = globalThis.setTimeout(() => {
-      term.writeln(`${GREEN}✓ Connected${RESET} — mock session (no real SSH yet)`);
-      term.writeln(`${DIM}Type "help" for available commands.${RESET}`);
+      term.writeln(`${GREEN}${i18n.t("terminal.connected")}${RESET}`);
+      term.writeln(`${DIM}${i18n.t("terminal.helpHint")}${RESET}`);
       term.write(`\r\n${prompt}`);
       connected = true;
       useSessionStore.getState().markConnected(session.id);

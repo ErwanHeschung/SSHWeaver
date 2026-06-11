@@ -1,0 +1,62 @@
+{
+  "search": {
+    "placeholder": "Search connections…",
+    "label": "Search connections",
+    "clear": "Clear search",
+    "empty": "No connections match “{{query}}”."
+  },
+  "actions": {
+    "label": "Actions",
+    "connect": "Connect",
+    "edit": "Edit",
+    "delete": "Delete",
+    "add": "Add connection"
+  },
+  "connection": {
+    "select": "Select {{name}}",
+    "addFavorite": "Add favorite",
+    "removeFavorite": "Remove favorite"
+  },
+  "theme": {
+    "toLight": "Switch to light theme",
+    "toDark": "Switch to dark theme"
+  },
+  "language": {
+    "toFrench": "Passer en français",
+    "toEnglish": "Switch to English"
+  },
+  "tabs": {
+    "close": "Close",
+    "closeNamed": "Close {{title}}"
+  },
+  "terminal": {
+    "empty": "No active session",
+    "emptyHint": "Connect to a server from the sidebar to open a terminal.",
+    "connecting": "Connecting to {{host}}:{{port}}…",
+    "connected": "* Connected — mock session (no real SSH yet)",
+    "helpHint": "Type \"help\" for available commands.",
+    "available": "Available: help, whoami, hostname, clear, exit",
+    "notFound": "{{command}}: command not found"
+  },
+  "settings": {
+    "open": "Settings",
+    "close": "Close",
+    "appearance": {
+      "nav": "Appearance",
+      "title": "Appearance",
+      "themeLabel": "Theme",
+      "themeHint": "Choose how SSHWeaver looks. “System” follows your operating system.",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "language": {
+      "nav": "Language",
+      "title": "Language",
+      "label": "Display language",
+      "hint": "Select the language used throughout the app.",
+      "english": "English",
+      "french": "Français"
+    }
+  }
+}
