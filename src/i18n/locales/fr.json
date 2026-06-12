@@ -38,6 +38,25 @@
     "available": "Disponibles : help, whoami, hostname, clear, exit",
     "notFound": "{{command}} : commande introuvable"
   },
+  "modal": {
+    "close": "Fermer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": {
+      "title": "Supprimer la connexion",
+      "message": "Voulez-vous vraiment supprimer « {{name}} » ? Cette action est irréversible."
+    },
+    "connection": {
+      "addTitle": "Ajouter une connexion",
+      "editTitle": "Modifier la connexion",
+      "name": "Nom",
+      "host": "Hôte",
+      "port": "Port",
+      "username": "Nom d’utilisateur",
+      "create": "Ajouter",
+      "save": "Enregistrer"
+    }
+  },
   "settings": {
     "open": "Paramètres",
     "close": "Fermer",

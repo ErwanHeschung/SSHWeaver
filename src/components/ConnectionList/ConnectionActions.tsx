@@ -5,6 +5,9 @@ import { MoreVertical, Pencil, PlugZap, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Connection } from "@/types/connection";
 import { useConnectionStore } from "@stores/useConnectionStore";
+import { useModalStore } from "@stores/useModalStore";
+import { ConfirmModal } from "@components/Modal/ConfirmModal";
+import { ConnectionFormModal } from "@components/Modal/ConnectionFormModal";
 
 interface ConnectionActionsProps {
   connection: Connection;
@@ -13,8 +16,20 @@ interface ConnectionActionsProps {
 export function ConnectionActions({ connection }: Readonly<ConnectionActionsProps>) {
   const { t } = useTranslation();
   const connect = useConnectionStore((s) => s.connect);
-  const edit = useConnectionStore((s) => s.edit);
   const remove = useConnectionStore((s) => s.remove);
+  const openModal = useModalStore((s) => s.open);
+
+  const edit = () =>
+    openModal(ConnectionFormModal, { mode: "edit", connection });
+
+  const confirmDelete = () =>
+    openModal(ConfirmModal, {
+      title: t("modal.delete.title"),
+      message: t("modal.delete.message", { name: connection.name }),
+      confirmLabel: t("actions.delete"),
+      danger: true,
+      onConfirm: () => remove(connection.id),
+    });
 
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
@@ -93,11 +108,11 @@ export function ConnectionActions({ connection }: Readonly<ConnectionActionsProp
               <PlugZap className="size-4" />
               {t("actions.connect")}
             </MenuItem>
-            <MenuItem onClick={run(() => edit(connection))}>
+            <MenuItem onClick={run(edit)}>
               <Pencil className="size-3.5" />
               {t("actions.edit")}
             </MenuItem>
-            <MenuItem onClick={run(() => remove(connection.id))} danger>
+            <MenuItem onClick={run(confirmDelete)} danger>
               <Trash2 className="size-3.5" />
               {t("actions.delete")}
             </MenuItem>

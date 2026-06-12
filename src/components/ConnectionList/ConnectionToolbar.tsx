@@ -1,12 +1,15 @@
 import { Plus, Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useConnectionStore } from "@stores/useConnectionStore";
+import { useModalStore } from "@stores/useModalStore";
+import { ConnectionFormModal } from "@components/Modal/ConnectionFormModal";
 
 export function ConnectionToolbar() {
   const { t } = useTranslation();
   const query = useConnectionStore((s) => s.query);
   const setQuery = useConnectionStore((s) => s.setQuery);
-  const add = useConnectionStore((s) => s.add);
+  const openModal = useModalStore((s) => s.open);
+  const add = () => openModal(ConnectionFormModal, { mode: "add" });
 
   return (
     <div className="flex flex-none items-center gap-2 border-b border-border px-2 py-2">

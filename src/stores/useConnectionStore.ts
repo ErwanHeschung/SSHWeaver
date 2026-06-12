@@ -5,6 +5,11 @@ import { useSessionStore } from "@stores/useSessionStore";
 
 const STATUSES = Object.values(ConnectionStatus);
 
+export type ConnectionDraft = Pick<
+  Connection,
+  "name" | "host" | "port" | "username"
+>;
+
 const SEED: Connection[] = Array.from({ length: 500 }, (_, i) => ({
   id: String(i),
   name: `server-${i.toString().padStart(3, "0")}`,
@@ -23,9 +28,9 @@ interface ConnectionState {
   select: (id: string) => void;
   setQuery: (query: string) => void;
   setStatus: (id: string, status: ConnectionStatus) => void;
-  add: () => void;
+  create: (draft: ConnectionDraft) => void;
+  update: (id: string, draft: ConnectionDraft) => void;
   connect: (connection: Connection) => void;
-  edit: (connection: Connection) => void;
   remove: (id: string) => void;
   toggleFavorite: (id: string) => void;
 }
@@ -45,9 +50,26 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
       ),
     })),
 
-  // TODO: wire to the Tauri backend (invoke) once the SSH layer exists.
-  add: () => console.log("add connection"),
-  edit: (connection) => console.log("edit", connection.id),
+  // TODO: persist create/update/remove via the Tauri backend once it exists.
+  create: (draft) =>
+    set((state) => ({
+      connections: [
+        ...state.connections,
+        {
+          ...draft,
+          id: crypto.randomUUID(),
+          status: ConnectionStatus.Disconnected,
+          isFavorite: false,
+        },
+      ],
+    })),
+
+  update: (id, draft) =>
+    set((state) => ({
+      connections: state.connections.map((c) =>
+        c.id === id ? { ...c, ...draft } : c,
+      ),
+    })),
 
   connect: (connection) => {
     set((state) => ({

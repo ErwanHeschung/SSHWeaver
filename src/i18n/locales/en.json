@@ -38,6 +38,25 @@
     "available": "Available: help, whoami, hostname, clear, exit",
     "notFound": "{{command}}: command not found"
   },
+  "modal": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": {
+      "title": "Delete connection",
+      "message": "Are you sure you want to delete “{{name}}”? This action cannot be undone."
+    },
+    "connection": {
+      "addTitle": "Add connection",
+      "editTitle": "Edit connection",
+      "name": "Name",
+      "host": "Host",
+      "port": "Port",
+      "username": "Username",
+      "create": "Add",
+      "save": "Save"
+    }
+  },
   "settings": {
     "open": "Settings",
     "close": "Close",
