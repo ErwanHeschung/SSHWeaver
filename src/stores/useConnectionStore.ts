@@ -2,43 +2,40 @@ import { create } from "zustand";
 import { ConnectionStatus } from "@/types/connection";
 import type { Connection } from "@/types/connection";
 import { useSessionStore } from "@stores/useSessionStore";
-
-const STATUSES = Object.values(ConnectionStatus);
+import { connectionRepository } from "@repositories/connectionRepository";
 
 export type ConnectionDraft = Pick<
   Connection,
   "name" | "host" | "port" | "username"
 >;
 
-const SEED: Connection[] = Array.from({ length: 500 }, (_, i) => ({
-  id: String(i),
-  name: `server-${i.toString().padStart(3, "0")}`,
-  host: `10.0.${Math.floor(i / 256)}.${i % 256}`,
-  port: 22,
-  username: "root",
-  status: STATUSES[i % STATUSES.length]!,
-  isFavorite: i % 7 === 0,
-}));
-
 interface ConnectionState {
   connections: Connection[];
   selectedId?: string;
   query: string;
+  loaded: boolean;
 
+  load: () => Promise<void>;
   select: (id: string) => void;
   setQuery: (query: string) => void;
   setStatus: (id: string, status: ConnectionStatus) => void;
-  create: (draft: ConnectionDraft) => void;
-  update: (id: string, draft: ConnectionDraft) => void;
+  create: (draft: ConnectionDraft) => Promise<void>;
+  update: (id: string, draft: ConnectionDraft) => Promise<void>;
   connect: (connection: Connection) => void;
-  remove: (id: string) => void;
-  toggleFavorite: (id: string) => void;
+  remove: (id: string) => Promise<void>;
+  toggleFavorite: (id: string) => Promise<void>;
 }
 
-export const useConnectionStore = create<ConnectionState>((set) => ({
-  connections: SEED,
+export const useConnectionStore = create<ConnectionState>((set, get) => ({
+  connections: [],
   selectedId: undefined,
   query: "",
+  loaded: false,
+
+  load: async () => {
+    const connections = await connectionRepository.list();
+    set({ connections, loaded: true });
+  },
 
   select: (id) => set({ selectedId: id }),
   setQuery: (query) => set({ query }),
@@ -50,26 +47,22 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
       ),
     })),
 
-  // TODO: persist create/update/remove via the Tauri backend once it exists.
-  create: (draft) =>
+  create: async (draft) => {
+    const created = await connectionRepository.create(draft);
     set((state) => ({
-      connections: [
-        ...state.connections,
-        {
-          ...draft,
-          id: crypto.randomUUID(),
-          status: ConnectionStatus.Disconnected,
-          isFavorite: false,
-        },
-      ],
-    })),
+      connections: [...state.connections, created],
+    }));
+  },
 
-  update: (id, draft) =>
+  update: async (id, draft) => {
+    const updated = await connectionRepository.update(id, draft);
+    // Take the persisted fields as the source of truth, but keep the live status.
     set((state) => ({
       connections: state.connections.map((c) =>
-        c.id === id ? { ...c, ...draft } : c,
+        c.id === id ? { ...updated, status: c.status } : c,
       ),
-    })),
+    }));
+  },
 
   connect: (connection) => {
     set((state) => ({
@@ -82,15 +75,21 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     useSessionStore.getState().open(connection);
   },
 
-  remove: (id) =>
+  remove: async (id) => {
+    await connectionRepository.remove(id);
     set((state) => ({
       connections: state.connections.filter((c) => c.id !== id),
-    })),
+    }));
+  },
 
-  toggleFavorite: (id) =>
+  toggleFavorite: async (id) => {
+    const current = get().connections.find((c) => c.id === id);
+    if (!current) return;
+    const stored = await connectionRepository.setFavorite(id, !current.isFavorite);
     set((state) => ({
       connections: state.connections.map((c) =>
-        c.id === id ? { ...c, isFavorite: !c.isFavorite } : c,
+        c.id === id ? { ...c, isFavorite: stored.isFavorite } : c,
       ),
-    })),
+    }));
+  },
 }));
