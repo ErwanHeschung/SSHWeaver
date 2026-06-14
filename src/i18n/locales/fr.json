@@ -54,11 +54,14 @@
       "addTitle": "Ajouter une connexion",
       "editTitle": "Modifier la connexion",
       "name": "Nom",
+      "nameOptional": "Nom (facultatif)",
       "host": "Hôte",
       "port": "Port",
       "username": "Nom d’utilisateur",
       "create": "Ajouter",
-      "save": "Enregistrer"
+      "save": "Enregistrer",
+      "connectAfterCreate": "Se connecter directement",
+      "duplicate": "Une connexion vers cet hôte, ce port et cet utilisateur existe déjà."
     },
     "password": {
       "title": "Se connecter à {{name}}",

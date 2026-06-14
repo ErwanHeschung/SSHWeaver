@@ -54,11 +54,14 @@
       "addTitle": "Add connection",
       "editTitle": "Edit connection",
       "name": "Name",
+      "nameOptional": "Name (optional)",
       "host": "Host",
       "port": "Port",
       "username": "Username",
       "create": "Add",
-      "save": "Save"
+      "save": "Save",
+      "connectAfterCreate": "Connect right away",
+      "duplicate": "A connection to this host, port and username already exists."
     },
     "password": {
       "title": "Connect to {{name}}",

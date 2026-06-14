@@ -26,7 +26,7 @@ interface ConnectionState {
   select: (id: string) => void;
   setQuery: (query: string) => void;
   setStatus: (id: string, status: ConnectionStatus) => void;
-  create: (draft: ConnectionDraft) => Promise<void>;
+  create: (draft: ConnectionDraft) => Promise<Connection>;
   update: (id: string, draft: ConnectionDraft) => Promise<void>;
   connect: (connection: Connection) => Promise<ConnectResult>;
   authenticatePassword: (
@@ -74,6 +74,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     set((state) => ({
       connections: [...state.connections, created],
     }));
+    return created;
   },
 
   update: async (id, draft) => {

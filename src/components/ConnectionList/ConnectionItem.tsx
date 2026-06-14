@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ConnectionStatus } from "@/types/connection";
 import type { Connection } from "@/types/connection";
 import { useConnectionStore } from "@stores/useConnectionStore";
+import { useConnect } from "@/hooks/useConnect";
 import { ConnectionActions } from "./ConnectionActions";
 
 interface ConnectionItemProps {
@@ -31,6 +32,8 @@ const STATUS_STYLE: Record<ConnectionStatus, StatusStyle> = {
 export function ConnectionItem({ connection, style }: Readonly<ConnectionItemProps>) {
   const { t } = useTranslation();
   const { id, name, host, port, username, status, isFavorite } = connection;
+  const endpoint = `${username}@${host}:${port}`;
+  const title = name.trim() || endpoint;
   const statusStyle = STATUS_STYLE[status];
   const favoriteLabel = isFavorite
     ? t("connection.removeFavorite")
@@ -39,6 +42,7 @@ export function ConnectionItem({ connection, style }: Readonly<ConnectionItemPro
   const selected = useConnectionStore((s) => s.selectedId === id);
   const select = useConnectionStore((s) => s.select);
   const toggleFavoriteAction = useConnectionStore((s) => s.toggleFavorite);
+  const connectTo = useConnect();
 
   const glow: CSSProperties = statusStyle.glow
     ? {
@@ -60,17 +64,21 @@ export function ConnectionItem({ connection, style }: Readonly<ConnectionItemPro
     >
       <button
         type="button"
-        aria-label={t("connection.select", { name })}
+        aria-label={t("connection.select", { name: title })}
         aria-pressed={selected}
         onClick={() => select(id)}
+        onDoubleClick={() => {
+          select(id);
+          void connectTo(connection);
+        }}
         className="absolute inset-0 focus-visible:-outline-offset-2"
       />
 
       <span className="pointer-events-none relative min-w-0 flex-1">
-        <span className="block truncate text-foreground">{name}</span>
-        <span className="block truncate text-xs text-muted">
-          {username}@{host}:{port}
-        </span>
+        <span className="block truncate text-foreground">{title}</span>
+        {name.trim() && (
+          <span className="block truncate text-xs text-muted">{endpoint}</span>
+        )}
       </span>
 
       <button

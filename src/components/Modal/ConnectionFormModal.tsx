@@ -1,10 +1,11 @@
-import { useId, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { Connection } from "@/types/connection";
 import { useModalStore } from "@stores/useModalStore";
 import { useConnectionStore } from "@stores/useConnectionStore";
 import type { ConnectionDraft } from "@stores/useConnectionStore";
+import { useConnect } from "@/hooks/useConnect";
 import { Modal } from "./Modal";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "./buttonStyles";
 
@@ -23,6 +24,8 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
   const close = useModalStore((s) => s.close);
   const create = useConnectionStore((s) => s.create);
   const update = useConnectionStore((s) => s.update);
+  const connections = useConnectionStore((s) => s.connections);
+  const connectTo = useConnect();
 
   const formId = useId();
   const nameRef = useRef<HTMLInputElement>(null);
@@ -36,16 +39,33 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
         }
       : EMPTY_DRAFT,
   );
+  const [connectAfter, setConnectAfter] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isDuplicate = useMemo(() => {
+    const host = draft.host.trim().toLowerCase();
+    const username = draft.username.trim();
+    if (!host || !username) return false;
+    return connections.some(
+      (c) =>
+        c.id !== connection?.id &&
+        c.host.trim().toLowerCase() === host &&
+        c.port === draft.port &&
+        c.username.trim() === username,
+    );
+  }, [connections, draft, connection]);
 
   const isValid =
-    draft.name.trim() !== "" &&
     draft.host.trim() !== "" &&
     draft.username.trim() !== "" &&
     Number.isInteger(draft.port) &&
     draft.port >= 1 &&
-    draft.port <= 65535;
+    draft.port <= 65535 &&
+    !isDuplicate;
 
-  const submit = () => {
+  const errorMessage = error ?? (isDuplicate ? t("modal.connection.duplicate") : null);
+
+  const submit = async () => {
     if (!isValid) return;
     const clean: ConnectionDraft = {
       name: draft.name.trim(),
@@ -53,9 +73,23 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
       username: draft.username.trim(),
       port: draft.port,
     };
-    if (mode === "edit" && connection) update(connection.id, clean);
-    else create(clean);
-    close();
+    try {
+      if (mode === "edit" && connection) {
+        await update(connection.id, clean);
+        close();
+      } else {
+        const created = await create(clean);
+        close();
+        if (connectAfter) await connectTo(created);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(
+        message.includes("DUPLICATE_ENDPOINT")
+          ? t("modal.connection.duplicate")
+          : message,
+      );
+    }
   };
 
   return (
@@ -78,11 +112,11 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
         id={formId}
         onSubmit={(e) => {
           e.preventDefault();
-          submit();
+          void submit();
         }}
         className="space-y-3"
       >
-        <Field label={t("modal.connection.name")}>
+        <Field label={t("modal.connection.nameOptional")}>
           <input
             ref={nameRef}
             type="text"
@@ -130,6 +164,24 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
             className={INPUT_CLASS}
           />
         </Field>
+
+        {mode === "add" && (
+          <label className="flex items-center gap-2 text-sm text-foreground">
+            <input
+              type="checkbox"
+              checked={connectAfter}
+              onChange={(e) => setConnectAfter(e.target.checked)}
+              className="size-4 rounded border-border accent-accent"
+            />
+            {t("modal.connection.connectAfterCreate")}
+          </label>
+        )}
+
+        {errorMessage && (
+          <p role="alert" className="text-sm text-danger">
+            {errorMessage}
+          </p>
+        )}
       </form>
     </Modal>
   );

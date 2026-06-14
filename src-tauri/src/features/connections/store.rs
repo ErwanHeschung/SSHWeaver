@@ -24,6 +24,17 @@ pub struct ConnectionDraft {
 
 const SELECT_COLUMNS: &str = "id, name, host, port, username, is_favorite";
 
+pub const DUPLICATE_ENDPOINT: &str = "DUPLICATE_ENDPOINT";
+
+fn map_write_error(err: rusqlite::Error) -> rusqlite::Error {
+    if let rusqlite::Error::SqliteFailure(ref inner, _) = err {
+        if inner.code == rusqlite::ErrorCode::ConstraintViolation {
+            return rusqlite::Error::SqliteFailure(*inner, Some(DUPLICATE_ENDPOINT.to_string()));
+        }
+    }
+    err
+}
+
 fn map_row(row: &Row) -> rusqlite::Result<StoredConnection> {
     Ok(StoredConnection {
         id: row.get("id")?,
@@ -57,7 +68,8 @@ pub fn create(conn: &Connection, draft: &ConnectionDraft) -> rusqlite::Result<St
         "INSERT INTO connections (id, name, host, port, username)
          VALUES (?1, ?2, ?3, ?4, ?5)",
         params![id, draft.name, draft.host, draft.port, draft.username],
-    )?;
+    )
+    .map_err(map_write_error)?;
     get(conn, &id)
 }
 
@@ -71,7 +83,8 @@ pub fn update(
          SET name = ?2, host = ?3, port = ?4, username = ?5, updated_at = datetime('now')
          WHERE id = ?1",
         params![id, draft.name, draft.host, draft.port, draft.username],
-    )?;
+    )
+    .map_err(map_write_error)?;
     get(conn, id)
 }
 

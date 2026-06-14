@@ -6,9 +6,9 @@ import { useTranslation } from "react-i18next";
 import type { Connection } from "@/types/connection";
 import { useConnectionStore } from "@stores/useConnectionStore";
 import { useModalStore } from "@stores/useModalStore";
+import { useConnect } from "@/hooks/useConnect";
 import { ConfirmModal } from "@components/Modal/ConfirmModal";
 import { ConnectionFormModal } from "@components/Modal/ConnectionFormModal";
-import { ConnectionPasswordModal } from "@components/Modal/ConnectionPasswordModal";
 
 interface ConnectionActionsProps {
   connection: Connection;
@@ -17,15 +17,10 @@ interface ConnectionActionsProps {
 export function ConnectionActions({ connection }: Readonly<ConnectionActionsProps>) {
   const { t } = useTranslation();
   const remove = useConnectionStore((s) => s.remove);
-  const connectAction = useConnectionStore((s) => s.connect);
   const openModal = useModalStore((s) => s.open);
+  const connectTo = useConnect();
 
-  const connect = async () => {
-    const { outcome, sessionId } = await connectAction(connection);
-    if (outcome === "passwordRequired") {
-      openModal(ConnectionPasswordModal, { connection, sessionId });
-    }
-  };
+  const connect = () => connectTo(connection);
 
   const edit = () =>
     openModal(ConnectionFormModal, { mode: "edit", connection });
