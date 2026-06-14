@@ -45,4 +45,5 @@ pub struct HostKeyPrompt {
     pub host: String,
     pub port: u16,
     pub fingerprint: String,
+    pub changed: bool,
 }

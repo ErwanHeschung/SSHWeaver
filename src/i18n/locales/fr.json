@@ -76,6 +76,10 @@
     "hostKey": {
       "title": "Clé d’hôte inconnue",
       "message": "L’authenticité de {{host}}:{{port}} ne peut pas être vérifiée. Accepter cette clé pour continuer ?",
+      "changedTitle": "La clé d’hôte a changé",
+      "changedMessage": "La clé d’hôte de {{host}}:{{port}} diffère de celle enregistrée précédemment. Cela peut arriver après une réinstallation du serveur mais peut aussi signifier que quelqu’un intercepte la connexion.",
+      "changedWarning": "Ne continuez que si ce changement est attendu.",
+      "changedHint": "En acceptant, l’ancienne clé sera remplacée dans ~/.ssh/known_hosts.",
       "fingerprint": "Empreinte (SHA256)",
       "hint": "Elle sera enregistrée dans ~/.ssh/known_hosts et approuvée lors des prochaines connexions.",
       "accept": "Accepter et se connecter",

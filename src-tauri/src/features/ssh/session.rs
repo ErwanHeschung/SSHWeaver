@@ -5,7 +5,7 @@ use std::time::Duration;
 use parking_lot::Mutex;
 use russh::client::{self, AuthResult, Handle};
 use russh::keys::agent::client::AgentClient;
-use russh::keys::known_hosts::{check_known_hosts, learn_known_hosts};
+use russh::keys::known_hosts::{check_known_hosts, known_host_keys, learn_known_hosts};
 use russh::keys::{load_secret_key, ssh_key, HashAlg, PrivateKey, PrivateKeyWithHashAlg};
 use russh::{Channel, ChannelMsg, MethodKind};
 use serde::{Deserialize, Serialize};
@@ -65,7 +65,7 @@ struct ClientHandler {
 }
 
 impl ClientHandler {
-    async fn prompt_host_key(&self, fingerprint: String) -> bool {
+    async fn prompt_host_key(&self, fingerprint: String, changed: bool) -> bool {
         let (tx, rx) = oneshot::channel();
         self.app
             .state::<HostKeyPrompts>()
@@ -78,11 +78,59 @@ impl ClientHandler {
             host: self.host.clone(),
             port: self.port,
             fingerprint,
+            changed,
         };
         if event.emit(&self.app).is_err() {
             return false;
         }
         rx.await.unwrap_or(false)
+    }
+
+    async fn handle_changed_host_key(
+        &self,
+        server_public_key: &ssh_key::PublicKey,
+    ) -> Result<bool, russh::Error> {
+        let fingerprint = server_public_key.fingerprint(HashAlg::Sha256).to_string();
+        if !self.prompt_host_key(fingerprint.clone(), true).await {
+            tracing::warn!(
+                target: "ssh::audit",
+                host = %self.host,
+                port = self.port,
+                %fingerprint,
+                "changed host key rejected by user"
+            );
+            self.reject(format!(
+                "host key for {}:{} has changed and was rejected",
+                self.host, self.port
+            ));
+            return Ok(false);
+        }
+
+        tracing::warn!(
+            target: "ssh::audit",
+            host = %self.host,
+            port = self.port,
+            %fingerprint,
+            "changed host key accepted by user; updating known_hosts"
+        );
+        let stale: Vec<ssh_key::PublicKey> = known_host_keys(&self.host, self.port)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(_, key)| key)
+            .filter(|key| {
+                key.algorithm() == server_public_key.algorithm() && key != server_public_key
+            })
+            .collect();
+        if let Err(e) = replace_known_host(&self.host, self.port, server_public_key, &stale) {
+            tracing::error!(
+                target: "ssh::audit",
+                host = %self.host,
+                port = self.port,
+                error = %e,
+                "failed to update changed host key in known_hosts"
+            );
+        }
+        Ok(true)
     }
 
     fn reject(&self, reason: impl Into<String>) {
@@ -100,24 +148,13 @@ impl client::Handler for ClientHandler {
         match check_known_hosts(&self.host, self.port, server_public_key) {
             Ok(true) => return Ok(true),
             Err(russh::keys::Error::KeyChanged { .. }) => {
-                tracing::warn!(
-                    target: "ssh::audit",
-                    host = %self.host,
-                    port = self.port,
-                    "host key CHANGED — connection refused (possible man-in-the-middle)"
-                );
-                self.reject(format!(
-                    "host key for {}:{} has CHANGED — possible man-in-the-middle. \
-                     If the change is expected, remove the old line from ~/.ssh/known_hosts.",
-                    self.host, self.port
-                ));
-                return Ok(false);
+                return self.handle_changed_host_key(server_public_key).await;
             }
             Ok(false) | Err(_) => {}
         }
 
         let fingerprint = server_public_key.fingerprint(HashAlg::Sha256).to_string();
-        if !self.prompt_host_key(fingerprint.clone()).await {
+        if !self.prompt_host_key(fingerprint.clone(), false).await {
             tracing::warn!(
                 target: "ssh::audit",
                 host = %self.host,
@@ -389,6 +426,45 @@ fn home_dir() -> Option<PathBuf> {
     std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(PathBuf::from)
+}
+
+fn replace_known_host(
+    host: &str,
+    port: u16,
+    new_key: &ssh_key::PublicKey,
+    stale: &[ssh_key::PublicKey],
+) -> std::io::Result<()> {
+    if !stale.is_empty() {
+        let path = home_dir()
+            .map(|home| home.join(".ssh").join("known_hosts"))
+            .ok_or_else(|| std::io::Error::other("no home directory"))?;
+        if let Ok(contents) = std::fs::read_to_string(&path) {
+            let mut kept: Vec<&str> = contents
+                .lines()
+                .filter(|line| !line_carries_key(line, stale))
+                .collect();
+            kept.push("");
+            std::fs::write(&path, kept.join("\n"))?;
+        }
+    }
+
+    learn_known_hosts(host, port, new_key).map_err(std::io::Error::other)
+}
+
+fn line_carries_key(line: &str, keys: &[ssh_key::PublicKey]) -> bool {
+    let trimmed = line.trim_start();
+    if trimmed.is_empty() || trimmed.starts_with('#') {
+        return false;
+    }
+    let mut fields = trimmed.split_whitespace();
+    let _hosts = fields.next();
+    let (Some(algo), Some(b64)) = (fields.next(), fields.next()) else {
+        return false;
+    };
+    match ssh_key::PublicKey::from_openssh(&format!("{algo} {b64}")) {
+        Ok(parsed) => keys.iter().any(|k| *k == parsed),
+        Err(_) => false,
+    }
 }
 
 async fn start_session(

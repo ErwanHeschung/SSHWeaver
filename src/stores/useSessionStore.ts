@@ -16,6 +16,7 @@ interface SessionState {
 
   open: (connection: Connection) => string;
   close: (id: string) => void;
+  restart: (id: string) => void;
   setActive: (id: string) => void;
   markConnected: (id: string) => void;
   markClosed: (id: string, error?: string) => void;
@@ -58,6 +59,16 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         activeId,
       };
     }),
+
+  restart: (id) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === id
+          ? { ...s, status: SessionStatus.Connecting, error: undefined }
+          : s,
+      ),
+      activeId: id,
+    })),
 
   setActive: (id) => set({ activeId: id }),
 

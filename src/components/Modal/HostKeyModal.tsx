@@ -10,6 +10,7 @@ export interface HostKeyProps {
   host: string;
   port: number;
   fingerprint: string;
+  changed: boolean;
 }
 
 export function HostKeyModal({
@@ -17,6 +18,7 @@ export function HostKeyModal({
   host,
   port,
   fingerprint,
+  changed,
 }: Readonly<HostKeyProps>) {
   const { t } = useTranslation();
   const close = useModalStore((s) => s.close);
@@ -29,7 +31,7 @@ export function HostKeyModal({
 
   return (
     <Modal
-      title={t("modal.hostKey.title")}
+      title={t(changed ? "modal.hostKey.changedTitle" : "modal.hostKey.title")}
       onClose={() => decide(false)}
       size="sm"
       initialFocusRef={rejectRef}
@@ -55,8 +57,16 @@ export function HostKeyModal({
     >
       <div className="space-y-3 text-sm">
         <p className="text-muted">
-          {t("modal.hostKey.message", { host, port })}
+          {t(changed ? "modal.hostKey.changedMessage" : "modal.hostKey.message", {
+            host,
+            port,
+          })}
         </p>
+        {changed && (
+          <p className="font-medium text-danger">
+            {t("modal.hostKey.changedWarning")}
+          </p>
+        )}
         <div className="space-y-1">
           <span className="text-xs font-medium text-muted">
             {t("modal.hostKey.fingerprint")}
@@ -65,7 +75,9 @@ export function HostKeyModal({
             {fingerprint}
           </code>
         </div>
-        <p className="text-xs text-faint">{t("modal.hostKey.hint")}</p>
+        <p className="text-xs text-faint">
+          {t(changed ? "modal.hostKey.changedHint" : "modal.hostKey.hint")}
+        </p>
       </div>
     </Modal>
   );

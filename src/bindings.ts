@@ -49,6 +49,7 @@ export type HostKeyPrompt = {
 	host: string,
 	port: number,
 	fingerprint: string,
+	changed: boolean,
 };
 
 export type PasswordOutcome = "authenticated" | { failed: number } | "lockedOut";

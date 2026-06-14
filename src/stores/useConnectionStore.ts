@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { ConnectionStatus } from "@/types/connection";
 import type { Connection } from "@/types/connection";
+import { SessionStatus } from "@/types/session";
 import { useSessionStore } from "@stores/useSessionStore";
 import { connectionRepository } from "@repositories/connectionRepository";
 import { sshRepository } from "@repositories/sshRepository";
@@ -91,7 +92,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     const existing = sessions.sessions.find(
       (s) => s.connectionId === connection.id,
     );
-    if (existing) {
+    if (existing && existing.status !== SessionStatus.Closed) {
       sessions.setActive(existing.id);
       return { outcome: "connected", sessionId: existing.id };
     }
@@ -103,7 +104,13 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         ConnectionStatus.Connecting,
       ),
     }));
-    const sessionId = sessions.open(connection);
+    let sessionId: string;
+    if (existing) {
+      sessions.restart(existing.id);
+      sessionId = existing.id;
+    } else {
+      sessionId = sessions.open(connection);
+    }
 
     try {
       const outcome = await sshRepository.connect({

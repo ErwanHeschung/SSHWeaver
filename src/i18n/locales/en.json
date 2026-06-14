@@ -76,6 +76,10 @@
     "hostKey": {
       "title": "Unknown host key",
       "message": "The authenticity of {{host}}:{{port}} can't be established. Accept this key to continue connecting?",
+      "changedTitle": "Host key has changed",
+      "changedMessage": "The host key for {{host}}:{{port}} is different from the one previously saved. This can happen after a server reinstall but it can also mean someone is intercepting the connection.",
+      "changedWarning": "Only continue if you were expecting this change.",
+      "changedHint": "Accepting will replace the old key in ~/.ssh/known_hosts.",
       "fingerprint": "Fingerprint (SHA256)",
       "hint": "It will be saved to ~/.ssh/known_hosts and trusted on future connections.",
       "accept": "Accept & connect",

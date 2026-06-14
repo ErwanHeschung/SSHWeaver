@@ -199,6 +199,19 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
     };
   }, [session.id]);
 
+  const prevStatusRef = useRef(session.status);
+  useEffect(() => {
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = session.status;
+    if (prev === SessionStatus.Closed && session.status === SessionStatus.Connecting) {
+      const term = termRef.current;
+      if (!term) return;
+      term.reset();
+      term.writeln(
+        `${DIM}${i18n.t("terminal.connecting", { host: session.host, port: session.port })}${RESET}`,
+      );
+    }
+  }, [session.status, session.host, session.port]);
 
   useEffect(() => {
     if (session.status !== SessionStatus.Connected) return;

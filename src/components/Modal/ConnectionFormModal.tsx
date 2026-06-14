@@ -39,7 +39,7 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
         }
       : EMPTY_DRAFT,
   );
-  const [connectAfter, setConnectAfter] = useState(false);
+  const [connectAfter, setConnectAfter] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const isDuplicate = useMemo(() => {
