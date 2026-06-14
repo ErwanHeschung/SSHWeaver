@@ -33,10 +33,14 @@
     "empty": "Aucune session active",
     "emptyHint": "Connectez-vous à un serveur depuis la barre latérale pour ouvrir un terminal.",
     "connecting": "Connexion à {{host}}:{{port}}…",
-    "connected": "✓ Connecté — session simulée (pas encore de vrai SSH)",
-    "helpHint": "Tapez « help » pour voir les commandes disponibles.",
-    "available": "Disponibles : help, whoami, hostname, clear, exit",
-    "notFound": "{{command}} : commande introuvable"
+    "connectFailed": "Échec de la connexion : {{error}}",
+    "sessionClosed": "Session fermée.",
+    "search": {
+      "placeholder": "Rechercher…",
+      "previous": "Résultat précédent (Maj+Entrée)",
+      "next": "Résultat suivant (Entrée)",
+      "close": "Fermer (Échap)"
+    }
   },
   "modal": {
     "close": "Fermer",
@@ -55,6 +59,24 @@
       "username": "Nom d’utilisateur",
       "create": "Ajouter",
       "save": "Enregistrer"
+    },
+    "password": {
+      "title": "Se connecter à {{name}}",
+      "label": "Mot de passe",
+      "connect": "Se connecter",
+      "authenticating": "Connexion…",
+      "failed": "Échec de l’authentification. Réessayez.",
+      "failedRemaining_one": "Échec de l’authentification. {{count}} tentative restante.",
+      "failedRemaining_other": "Échec de l’authentification. {{count}} tentatives restantes.",
+      "lockedOut": "Trop de tentatives échouées. La connexion a été fermée, veuillez vous reconnecter."
+    },
+    "hostKey": {
+      "title": "Clé d’hôte inconnue",
+      "message": "L’authenticité de {{host}}:{{port}} ne peut pas être vérifiée. Accepter cette clé pour continuer ?",
+      "fingerprint": "Empreinte (SHA256)",
+      "hint": "Elle sera enregistrée dans ~/.ssh/known_hosts et approuvée lors des prochaines connexions.",
+      "accept": "Accepter et se connecter",
+      "reject": "Refuser"
     }
   },
   "settings": {

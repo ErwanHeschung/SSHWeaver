@@ -33,10 +33,14 @@
     "empty": "No active session",
     "emptyHint": "Connect to a server from the sidebar to open a terminal.",
     "connecting": "Connecting to {{host}}:{{port}}…",
-    "connected": "* Connected — mock session (no real SSH yet)",
-    "helpHint": "Type \"help\" for available commands.",
-    "available": "Available: help, whoami, hostname, clear, exit",
-    "notFound": "{{command}}: command not found"
+    "connectFailed": "Connection failed: {{error}}",
+    "sessionClosed": "Session closed.",
+    "search": {
+      "placeholder": "Search…",
+      "previous": "Previous match (Shift+Enter)",
+      "next": "Next match (Enter)",
+      "close": "Close (Esc)"
+    }
   },
   "modal": {
     "close": "Close",
@@ -55,6 +59,24 @@
       "username": "Username",
       "create": "Add",
       "save": "Save"
+    },
+    "password": {
+      "title": "Connect to {{name}}",
+      "label": "Password",
+      "connect": "Connect",
+      "authenticating": "Connecting…",
+      "failed": "Authentication failed. Try again.",
+      "failedRemaining_one": "Authentication failed. {{count}} attempt remaining.",
+      "failedRemaining_other": "Authentication failed. {{count}} attempts remaining.",
+      "lockedOut": "Too many failed attempts. The connection has been closed, please reconnect."
+    },
+    "hostKey": {
+      "title": "Unknown host key",
+      "message": "The authenticity of {{host}}:{{port}} can't be established. Accept this key to continue connecting?",
+      "fingerprint": "Fingerprint (SHA256)",
+      "hint": "It will be saved to ~/.ssh/known_hosts and trusted on future connections.",
+      "accept": "Accept & connect",
+      "reject": "Reject"
     }
   },
   "settings": {

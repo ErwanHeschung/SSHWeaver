@@ -1,12 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
+import { ClipboardAddon } from "@xterm/addon-clipboard";
+import { SearchAddon } from "@xterm/addon-search";
+import { WebLinksAddon } from "@xterm/addon-web-links";
+import { WebglAddon } from "@xterm/addon-webgl";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import "@xterm/xterm/css/xterm.css";
 import i18n from "@i18n/index";
 import { ConnectionStatus } from "@/types/connection";
+import { SessionStatus } from "@/types/session";
 import type { TerminalSession } from "@/types/session";
 import { useConnectionStore } from "@stores/useConnectionStore";
 import { useSessionStore } from "@stores/useSessionStore";
+import { sshRepository } from "@repositories/sshRepository";
 import { readTerminalTheme } from "./terminalTheme";
 
 interface TerminalViewProps {
@@ -14,16 +22,34 @@ interface TerminalViewProps {
   active: boolean;
 }
 
-const GREEN = "\x1b[32m";
-const CYAN = "\x1b[36m";
 const DIM = "\x1b[90m";
+const RED = "\x1b[31m";
 const RESET = "\x1b[0m";
 
 export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
+  const searchRef = useRef<SearchAddon | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const activeRef = useRef(active);
   activeRef.current = active;
+
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const findNext = (query: string) => {
+    if (query) searchRef.current?.findNext(query);
+  };
+  const findPrevious = (query: string) => {
+    if (query) searchRef.current?.findPrevious(query);
+  };
+  const closeSearch = () => {
+    setSearchOpen(false);
+    termRef.current?.clearSelection();
+    termRef.current?.focus();
+  };
 
   useEffect(() => {
     const container = containerRef.current;
@@ -37,74 +63,105 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
       cursorBlink: true,
       theme: readTerminalTheme(),
     });
+    termRef.current = term;
     const fit = new FitAddon();
     fitRef.current = fit;
     term.loadAddon(fit);
+    term.loadAddon(new ClipboardAddon());
+    term.loadAddon(new WebLinksAddon((_event, uri) => void openUrl(uri)));
+    const search = new SearchAddon();
+    term.loadAddon(search);
+    searchRef.current = search;
+
     term.open(container);
+
+    try {
+      const webgl = new WebglAddon();
+      webgl.onContextLoss(() => webgl.dispose());
+      term.loadAddon(webgl);
+    } catch {
+      // WebGL not available — xterm keeps its default renderer.
+    }
+
     fit.fit();
 
-    const prompt = `${GREEN}${session.username}@${session.host}${RESET}:${CYAN}~${RESET}$ `;
-    let line = "";
-    let connected = false;
+    term.attachCustomKeyEventHandler((e) => {
+      if (e.type !== "keydown") return true;
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return true;
 
-    const runCommand = (cmd: string) => {
-      const command = cmd.trim();
-      if (command === "clear") {
-        term.clear();
-        return;
+      // Ctrl+F / Cmd+F: open the in-terminal search bar.
+      if (e.key === "f" || e.key === "F") {
+        e.preventDefault();
+        setSearchOpen(true);
+        return false;
       }
-      if (command === "help") {
-        term.write(`\r\n${i18n.t("terminal.available")}`);
-      } else if (command === "whoami") {
-        term.write(`\r\n${session.username}`);
-      } else if (command === "hostname") {
-        term.write(`\r\n${session.host}`);
-      } else if (command === "exit") {
-        useSessionStore.getState().close(session.id);
-        return;
-      } else if (command !== "") {
-        term.write(`\r\n${i18n.t("terminal.notFound", { command })}`);
-      }
-      term.write(`\r\n${prompt}`);
-    };
 
-    const onData = term.onData((data) => {
-      if (!connected) return;
-
-      for (const ch of data) {
-        if (ch === "\r") {
-          runCommand(line);
-          line = "";
-        } else if (ch === "\x7f") {
-          if (line.length > 0) {
-            line = line.slice(0, -1);
-            term.write("\b \b");
-          }
-        } else if (ch === "\x03") {
-          term.write("^C");
-          line = "";
-          term.write(`\r\n${prompt}`);
-        } else if (ch >= " ") {
-          line += ch;
-          term.write(ch);
-        }
+      if ((e.shiftKey || e.metaKey) && (e.key === "c" || e.key === "C")) {
+        if (!term.hasSelection()) return true;
+        e.preventDefault();
+        const selection = term.getSelection();
+        if (selection) void navigator.clipboard.writeText(selection);
+        return false;
       }
+
+      if ((e.shiftKey || e.metaKey) && (e.key === "v" || e.key === "V")) {
+        e.preventDefault();
+        void navigator.clipboard.readText().then((text) => {
+          if (text) term.paste(text);
+        });
+        return false;
+      }
+
+      return true;
     });
 
     term.writeln(
       `${DIM}${i18n.t("terminal.connecting", { host: session.host, port: session.port })}${RESET}`,
     );
-    const handshake = globalThis.setTimeout(() => {
-      term.writeln(`${GREEN}${i18n.t("terminal.connected")}${RESET}`);
-      term.writeln(`${DIM}${i18n.t("terminal.helpHint")}${RESET}`);
-      term.write(`\r\n${prompt}`);
-      connected = true;
-      useSessionStore.getState().markConnected(session.id);
-      useConnectionStore
-        .getState()
-        .setStatus(session.connectionId, ConnectionStatus.Connected);
-      if (activeRef.current) term.focus();
-    }, 700);
+
+    const isConnected = () =>
+      useSessionStore.getState().sessions.find((s) => s.id === session.id)
+        ?.status === SessionStatus.Connected;
+
+    const onData = term.onData((data) => {
+      if (isConnected()) void sshRepository.write(session.id, data);
+    });
+    const onResize = term.onResize(({ cols, rows }) => {
+      if (isConnected()) void sshRepository.resize(session.id, cols, rows);
+    });
+
+    let disposed = false;
+    let unlistenOutput: (() => void) | undefined;
+    let unlistenClosed: (() => void) | undefined;
+
+    void (async () => {
+      const offOutput = await sshRepository.onOutput((e) => {
+        if (e.payload.sessionId === session.id) {
+          term.write(new Uint8Array(e.payload.data));
+        }
+      });
+      const offClosed = await sshRepository.onClosed((e) => {
+        if (e.payload.sessionId !== session.id) return;
+        term.writeln(
+          e.payload.message
+            ? `\r\n${RED}${i18n.t("terminal.connectFailed", { error: e.payload.message })}${RESET}`
+            : `\r\n${DIM}${i18n.t("terminal.sessionClosed")}${RESET}`,
+        );
+        useSessionStore.getState().markClosed(session.id);
+        useConnectionStore
+          .getState()
+          .setStatus(session.connectionId, ConnectionStatus.Disconnected);
+      });
+
+      if (disposed) {
+        offOutput();
+        offClosed();
+        return;
+      }
+      unlistenOutput = offOutput;
+      unlistenClosed = offClosed;
+    })();
 
     const resizeObserver = new ResizeObserver(() => {
       if (activeRef.current) fit.fit();
@@ -120,13 +177,44 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
     });
 
     return () => {
-      globalThis.clearTimeout(handshake);
+      disposed = true;
       onData.dispose();
+      onResize.dispose();
+      unlistenOutput?.();
+      unlistenClosed?.();
       resizeObserver.disconnect();
       themeObserver.disconnect();
       term.dispose();
+      termRef.current = null;
+
+      const stillOpen = useSessionStore
+        .getState()
+        .sessions.some((s) => s.id === session.id);
+      if (!stillOpen) {
+        void sshRepository.disconnect(session.id);
+        useConnectionStore
+          .getState()
+          .setStatus(session.connectionId, ConnectionStatus.Disconnected);
+      }
     };
   }, [session.id]);
+
+
+  useEffect(() => {
+    if (session.status !== SessionStatus.Connected) return;
+    const term = termRef.current;
+    if (!term) return;
+    void sshRepository.resize(session.id, term.cols, term.rows);
+    if (activeRef.current) term.focus();
+  }, [session.status, session.id]);
+
+  useEffect(() => {
+    if (session.status === SessionStatus.Closed && session.error) {
+      termRef.current?.writeln(
+        `\r\n${RED}${i18n.t("terminal.connectFailed", { error: session.error })}${RESET}`,
+      );
+    }
+  }, [session.status, session.error]);
 
   useEffect(() => {
     if (!active) return;
@@ -134,10 +222,61 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
     return () => cancelAnimationFrame(id);
   }, [active]);
 
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.select();
+  }, [searchOpen]);
+
   return (
-    <div
-      ref={containerRef}
-      className={`absolute inset-0 p-2 ${active ? "" : "invisible"}`}
-    />
+    <div className={`absolute inset-0 ${active ? "" : "invisible"}`}>
+      <div ref={containerRef} className="absolute inset-0 p-2" />
+      {searchOpen && (
+        <div className="absolute right-3 top-3 flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-1 shadow-md">
+          <input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              findNext(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (e.shiftKey) findPrevious(searchQuery);
+                else findNext(searchQuery);
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                closeSearch();
+              }
+            }}
+            placeholder={t("terminal.search.placeholder")}
+            className="h-7 w-44 rounded bg-transparent px-2 text-sm text-foreground placeholder:text-faint focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => findPrevious(searchQuery)}
+            title={t("terminal.search.previous")}
+            className="rounded px-1.5 py-0.5 text-muted hover:bg-muted/20 hover:text-foreground"
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            onClick={() => findNext(searchQuery)}
+            title={t("terminal.search.next")}
+            className="rounded px-1.5 py-0.5 text-muted hover:bg-muted/20 hover:text-foreground"
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            onClick={closeSearch}
+            title={t("terminal.search.close")}
+            className="rounded px-1.5 py-0.5 text-muted hover:bg-muted/20 hover:text-foreground"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,0 +1,138 @@
+import { useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { Connection } from "@/types/connection";
+import { useModalStore } from "@stores/useModalStore";
+import { useConnectionStore } from "@stores/useConnectionStore";
+import { Modal } from "./Modal";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "./buttonStyles";
+
+export interface ConnectionPasswordProps {
+  connection: Connection;
+  sessionId: string;
+}
+
+const INPUT_CLASS =
+  "h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground transition-colors placeholder:text-faint focus:border-accent focus:outline-none";
+
+export function ConnectionPasswordModal({
+  connection,
+  sessionId,
+}: Readonly<ConnectionPasswordProps>) {
+  const { t } = useTranslation();
+  const close = useModalStore((s) => s.close);
+  const authenticatePassword = useConnectionStore((s) => s.authenticatePassword);
+  const abort = useConnectionStore((s) => s.abort);
+
+  const formId = useId();
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
+  const [lockedOut, setLockedOut] = useState(false);
+
+  const submit = async () => {
+    if (submitting || lockedOut) return;
+    setSubmitting(true);
+    setFailed(false);
+    const result = await authenticatePassword(connection, sessionId, password);
+
+    if (result.status === "authenticated") {
+      close();
+      return;
+    }
+
+    setSubmitting(false);
+    setPassword("");
+
+    if (result.status === "lockedOut") {
+      setLockedOut(true);
+      return;
+    }
+
+    setFailed(true);
+    setAttemptsRemaining(
+      result.status === "failed" ? result.attemptsRemaining : null,
+    );
+    passwordRef.current?.focus();
+  };
+
+  const cancel = () => {
+    abort(sessionId);
+    close();
+  };
+
+  return (
+    <Modal
+      title={t("modal.password.title", { name: connection.name })}
+      onClose={cancel}
+      size="sm"
+      initialFocusRef={passwordRef}
+      footer={
+        lockedOut ? (
+          <button type="button" onClick={cancel} className={PRIMARY_BUTTON}>
+            {t("modal.close")}
+          </button>
+        ) : (
+          <>
+            <button type="button" onClick={cancel} className={SECONDARY_BUTTON}>
+              {t("modal.cancel")}
+            </button>
+            <button
+              type="submit"
+              form={formId}
+              disabled={submitting}
+              className={PRIMARY_BUTTON}
+            >
+              {submitting
+                ? t("modal.password.authenticating")
+                : t("modal.password.connect")}
+            </button>
+          </>
+        )
+      }
+    >
+      <form
+        id={formId}
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit();
+        }}
+        className="space-y-3"
+      >
+        <p className="text-xs text-muted">
+          {connection.username}@{connection.host}:{connection.port}
+        </p>
+        <label className="block space-y-1.5">
+          <span className="text-xs font-medium text-muted">
+            {t("modal.password.label")}
+          </span>
+          <input
+            ref={passwordRef}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="off"
+            disabled={lockedOut}
+            className={INPUT_CLASS}
+          />
+        </label>
+        {lockedOut ? (
+          <p className="text-xs text-danger">
+            {t("modal.password.lockedOut")}
+          </p>
+        ) : (
+          failed && (
+            <p className="text-xs text-danger">
+              {typeof attemptsRemaining === "number"
+                ? t("modal.password.failedRemaining", {
+                    count: attemptsRemaining,
+                  })
+                : t("modal.password.failed")}
+            </p>
+          )
+        )}
+      </form>
+    </Modal>
+  );
+}

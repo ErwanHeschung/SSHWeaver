@@ -8,6 +8,7 @@ import { useConnectionStore } from "@stores/useConnectionStore";
 import { useModalStore } from "@stores/useModalStore";
 import { ConfirmModal } from "@components/Modal/ConfirmModal";
 import { ConnectionFormModal } from "@components/Modal/ConnectionFormModal";
+import { ConnectionPasswordModal } from "@components/Modal/ConnectionPasswordModal";
 
 interface ConnectionActionsProps {
   connection: Connection;
@@ -15,9 +16,16 @@ interface ConnectionActionsProps {
 
 export function ConnectionActions({ connection }: Readonly<ConnectionActionsProps>) {
   const { t } = useTranslation();
-  const connect = useConnectionStore((s) => s.connect);
   const remove = useConnectionStore((s) => s.remove);
+  const connectAction = useConnectionStore((s) => s.connect);
   const openModal = useModalStore((s) => s.open);
+
+  const connect = async () => {
+    const { outcome, sessionId } = await connectAction(connection);
+    if (outcome === "passwordRequired") {
+      openModal(ConnectionPasswordModal, { connection, sessionId });
+    }
+  };
 
   const edit = () =>
     openModal(ConnectionFormModal, { mode: "edit", connection });
@@ -104,7 +112,7 @@ export function ConnectionActions({ connection }: Readonly<ConnectionActionsProp
             }}
             className="z-50 min-w-40 overflow-hidden rounded-md border border-border bg-surface-elevated py-1 shadow-md"
           >
-            <MenuItem onClick={run(() => connect(connection))}>
+            <MenuItem onClick={run(connect)}>
               <PlugZap className="size-4" />
               {t("actions.connect")}
             </MenuItem>

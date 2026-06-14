@@ -3,11 +3,18 @@ import { ConnectionStatus } from "@/types/connection";
 import type { Connection } from "@/types/connection";
 import { useSessionStore } from "@stores/useSessionStore";
 import { connectionRepository } from "@repositories/connectionRepository";
+import { sshRepository } from "@repositories/sshRepository";
 
 export type ConnectionDraft = Pick<
   Connection,
   "name" | "host" | "port" | "username"
 >;
+
+const withStatus = (
+  connections: Connection[],
+  id: string,
+  status: ConnectionStatus,
+) => connections.map((c) => (c.id === id ? { ...c, status } : c));
 
 interface ConnectionState {
   connections: Connection[];
@@ -21,10 +28,27 @@ interface ConnectionState {
   setStatus: (id: string, status: ConnectionStatus) => void;
   create: (draft: ConnectionDraft) => Promise<void>;
   update: (id: string, draft: ConnectionDraft) => Promise<void>;
-  connect: (connection: Connection) => void;
+  connect: (connection: Connection) => Promise<ConnectResult>;
+  authenticatePassword: (
+    connection: Connection,
+    sessionId: string,
+    password: string,
+  ) => Promise<PasswordAuthResult>;
+  abort: (sessionId: string) => void;
   remove: (id: string) => Promise<void>;
   toggleFavorite: (id: string) => Promise<void>;
 }
+
+export interface ConnectResult {
+  outcome: "connected" | "passwordRequired" | "failed";
+  sessionId: string;
+}
+
+export type PasswordAuthResult =
+  | { status: "authenticated" }
+  | { status: "failed"; attemptsRemaining: number }
+  | { status: "lockedOut" }
+  | { status: "error"; message: string };
 
 export const useConnectionStore = create<ConnectionState>((set, get) => ({
   connections: [],
@@ -42,9 +66,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setStatus: (id, status) =>
     set((state) => ({
-      connections: state.connections.map((c) =>
-        c.id === id ? { ...c, status } : c,
-      ),
+      connections: withStatus(state.connections, id, status),
     })),
 
   create: async (draft) => {
@@ -56,7 +78,6 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   update: async (id, draft) => {
     const updated = await connectionRepository.update(id, draft);
-    // Take the persisted fields as the source of truth, but keep the live status.
     set((state) => ({
       connections: state.connections.map((c) =>
         c.id === id ? { ...updated, status: c.status } : c,
@@ -64,15 +85,84 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     }));
   },
 
-  connect: (connection) => {
+  connect: async (connection) => {
+    const sessions = useSessionStore.getState();
+    const existing = sessions.sessions.find(
+      (s) => s.connectionId === connection.id,
+    );
+    if (existing) {
+      sessions.setActive(existing.id);
+      return { outcome: "connected", sessionId: existing.id };
+    }
+
     set((state) => ({
-      connections: state.connections.map((c) =>
-        c.id === connection.id
-          ? { ...c, status: ConnectionStatus.Connecting }
-          : c,
+      connections: withStatus(
+        state.connections,
+        connection.id,
+        ConnectionStatus.Connecting,
       ),
     }));
-    useSessionStore.getState().open(connection);
+    const sessionId = sessions.open(connection);
+
+    try {
+      const outcome = await sshRepository.connect({
+        sessionId,
+        host: connection.host,
+        port: connection.port,
+        username: connection.username,
+        cols: 80,
+        rows: 24,
+      });
+      if (outcome === "connected") {
+        useSessionStore.getState().markConnected(sessionId);
+        get().setStatus(connection.id, ConnectionStatus.Connected);
+        return { outcome: "connected", sessionId };
+      }
+      return { outcome: "passwordRequired", sessionId };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      useSessionStore.getState().markClosed(sessionId, message);
+      get().setStatus(connection.id, ConnectionStatus.Disconnected);
+      return { outcome: "failed", sessionId };
+    }
+  },
+
+  authenticatePassword: async (connection, sessionId, password) => {
+    try {
+      const outcome = await sshRepository.authenticatePassword(
+        sessionId,
+        password,
+      );
+      if (outcome === "authenticated") {
+        useSessionStore.getState().markConnected(sessionId);
+        get().setStatus(connection.id, ConnectionStatus.Connected);
+        return { status: "authenticated" };
+      }
+      if (outcome === "lockedOut") {
+        // Backend already closed the connection; reflect it locally.
+        useSessionStore.getState().markClosed(sessionId);
+        get().setStatus(connection.id, ConnectionStatus.Disconnected);
+        return { status: "lockedOut" };
+      }
+      // { failed: attemptsRemaining } — wrong password, retry still allowed.
+      return { status: "failed", attemptsRemaining: outcome.failed };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      useSessionStore.getState().markClosed(sessionId, message);
+      get().setStatus(connection.id, ConnectionStatus.Disconnected);
+      return { status: "error", message };
+    }
+  },
+
+  abort: (sessionId) => {
+    const session = useSessionStore
+      .getState()
+      .sessions.find((s) => s.id === sessionId);
+    useSessionStore.getState().close(sessionId);
+    void sshRepository.disconnect(sessionId);
+    if (session) {
+      get().setStatus(session.connectionId, ConnectionStatus.Disconnected);
+    }
   },
 
   remove: async (id) => {

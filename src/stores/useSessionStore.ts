@@ -14,10 +14,11 @@ interface SessionState {
   sessions: TerminalSession[];
   activeId?: string;
 
-  open: (connection: Connection) => void;
+  open: (connection: Connection) => string;
   close: (id: string) => void;
   setActive: (id: string) => void;
   markConnected: (id: string) => void;
+  markClosed: (id: string, error?: string) => void;
 }
 
 export const useSessionStore = create<SessionState>((set, get) => ({
@@ -28,7 +29,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     const existing = get().sessions.find((s) => s.connectionId === connection.id);
     if (existing) {
       set({ activeId: existing.id });
-      return;
+      return existing.id;
     }
 
     const session: TerminalSession = {
@@ -45,6 +46,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       sessions: [...state.sessions, session],
       activeId: session.id,
     }));
+    return session.id;
   },
 
   close: (id) =>
@@ -63,6 +65,13 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set((state) => ({
       sessions: state.sessions.map((s) =>
         s.id === id ? { ...s, status: SessionStatus.Connected } : s,
+      ),
+    })),
+
+  markClosed: (id, error) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) =>
+        s.id === id ? { ...s, status: SessionStatus.Closed, error } : s,
       ),
     })),
 }));

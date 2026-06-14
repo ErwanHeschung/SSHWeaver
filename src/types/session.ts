@@ -12,4 +12,5 @@ export interface TerminalSession {
   host: string;
   port: number;
   status: SessionStatus;
+  error?: string;
 }

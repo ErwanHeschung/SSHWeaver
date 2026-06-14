@@ -3,16 +3,7 @@ import type { StoredConnection } from "@/bindings";
 import { ConnectionStatus } from "@/types/connection";
 import type { Connection } from "@/types/connection";
 import type { ConnectionDraft } from "@stores/useConnectionStore";
-
-type CmdResult<T> =
-  | { status: "ok"; data: T }
-  | { status: "error"; error: string };
-
-async function unwrap<T>(result: Promise<CmdResult<T>>): Promise<T> {
-  const res = await result;
-  if (res.status === "error") throw new Error(res.error);
-  return res.data;
-}
+import { unwrap } from "./result";
 
 const toConnection = (stored: StoredConnection): Connection => ({
   ...stored,

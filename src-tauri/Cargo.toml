@@ -25,7 +25,14 @@ serde_json = "1"
 rusqlite = { version = "0.40.1", features = ["bundled"] }
 rusqlite_migration = "2.6.0"
 uuid = { version = "1.23.3", features = ["v4"] }
-tauri-specta = { version = ">=2.0.0-rc, <3", features = ["typescript"] }
+tauri-specta = { version = ">=2.0.0-rc, <3", features = ["typescript", "derive"] }
 specta-typescript = "0.0.12"
 specta = ">=2.0.0-rc, <3"
+russh = { version = "0.61.2", default-features = false, features = ["ring", "flate2", "rsa"] }
+tokio = { version = "1.52.3", features = ["sync", "macros", "io-util", "rt", "net", "time"] }
+anyhow = "1.0.102"
+zeroize = "1.8"
+parking_lot = "0.12"
+tracing = "0.1"
+tracing-subscriber = "0.3"
 

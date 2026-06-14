@@ -6,6 +6,10 @@ use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .try_init();
+
     let builder = ipc::builder();
 
     #[cfg(debug_assertions)]
@@ -21,6 +25,9 @@ pub fn run() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
+            app.manage(features::ssh::SshSessions::default());
+            app.manage(features::ssh::PendingConnections::default());
+            app.manage(features::ssh::HostKeyPrompts::default());
             let db = db::init(app.handle())?;
             app.manage(db);
             Ok(())
