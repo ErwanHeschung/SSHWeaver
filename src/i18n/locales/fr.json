@@ -42,6 +42,34 @@
       "close": "Fermer (Échap)"
     }
   },
+  "sftp": {
+    "toggle": {
+      "terminal": "Terminal",
+      "files": "Fichiers"
+    },
+    "refresh": "Actualiser",
+    "upload": "Téléverser des fichiers",
+    "download": "Télécharger",
+    "modified": "Dernière modification",
+    "notConnected": "Connectez la session pour parcourir les fichiers.",
+    "loading": "Chargement des fichiers…",
+    "empty": "Ce dossier est vide.",
+    "error": "Impossible de charger les fichiers : {{error}}",
+    "downloaded": "{{name}} téléchargé.",
+    "deleted": "{{name}} supprimé.",
+    "uploaded_one": "{{count}} fichier téléversé.",
+    "uploaded_other": "{{count}} fichiers téléversés.",
+    "preview": {
+      "binary": "Aucun aperçu disponible pour ce type de fichier. Utilisez Télécharger."
+    },
+    "delete": {
+      "action": "Supprimer",
+      "title": "Supprimer",
+      "messageFile": "Supprimer « {{name}} » ? Cette action est irréversible.",
+      "messageDir": "Supprimer le dossier « {{name}} » et tout son contenu ? Cette action est irréversible.",
+      "confirm": "Supprimer"
+    }
+  },
   "modal": {
     "close": "Fermer",
     "cancel": "Annuler",

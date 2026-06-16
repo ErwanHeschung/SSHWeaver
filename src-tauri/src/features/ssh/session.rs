@@ -16,9 +16,12 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::sync::{mpsc, oneshot};
 use zeroize::Zeroizing;
 
+use super::sftp::{SftpSessions, SftpSlot};
 use super::{
     Control, HostKeyPrompt, HostKeyPrompts, PendingConnections, SshClosed, SshOutput, SshSessions,
 };
+
+pub(super) type SessionHandle = Arc<Handle<ClientHandler>>;
 
 #[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -56,7 +59,7 @@ pub struct Pending {
     attempts: u32,
 }
 
-struct ClientHandler {
+pub(super) struct ClientHandler {
     app: AppHandle,
     session_id: String,
     host: String,
@@ -474,6 +477,7 @@ async fn start_session(
     cols: u32,
     rows: u32,
 ) -> anyhow::Result<()> {
+    let handle: SessionHandle = Arc::new(handle);
     let channel = handle.channel_open_session().await?;
     channel
         .request_pty(false, "xterm-256color", cols, rows, 0, 0, &[])
@@ -486,6 +490,12 @@ async fn start_session(
         .lock()
         .insert(session_id.clone(), tx);
 
+
+    app.state::<SftpSessions>()
+        .0
+        .lock()
+        .insert(session_id.clone(), Arc::new(SftpSlot::new(handle.clone())));
+
     tauri::async_runtime::spawn(run(app, session_id, handle, channel, rx));
     Ok(())
 }
@@ -493,7 +503,7 @@ async fn start_session(
 async fn run(
     app: AppHandle,
     session_id: String,
-    handle: Handle<ClientHandler>,
+    handle: SessionHandle,
     mut channel: Channel<client::Msg>,
     mut rx: mpsc::UnboundedReceiver<Control>,
 ) {
@@ -518,6 +528,10 @@ async fn run(
     };
 
     let _ = channel.eof().await;
+    app.state::<SftpSessions>()
+        .0
+        .lock()
+        .remove(&session_id);
     drop(handle);
     app.state::<SshSessions>()
         .0

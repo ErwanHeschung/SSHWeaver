@@ -8,13 +8,14 @@ interface ModalProps {
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   initialFocusRef?: RefObject<HTMLElement | null>;
 }
 
 const SIZE_CLASS = {
   sm: "w-[min(24rem,calc(100vw-2rem))]",
   md: "w-[min(28rem,calc(100vw-2rem))]",
+  lg: "w-[min(52rem,calc(100vw-2rem))]",
 } as const;
 
 export function Modal({

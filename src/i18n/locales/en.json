@@ -42,6 +42,34 @@
       "close": "Close (Esc)"
     }
   },
+  "sftp": {
+    "toggle": {
+      "terminal": "Terminal",
+      "files": "Files"
+    },
+    "refresh": "Refresh",
+    "upload": "Upload files",
+    "download": "Download",
+    "modified": "Last modified",
+    "notConnected": "Connect the session to browse files.",
+    "loading": "Loading files…",
+    "empty": "This folder is empty.",
+    "error": "Couldn't load files: {{error}}",
+    "downloaded": "Downloaded {{name}}.",
+    "deleted": "Deleted {{name}}.",
+    "uploaded_one": "Uploaded {{count}} file.",
+    "uploaded_other": "Uploaded {{count}} files.",
+    "preview": {
+      "binary": "No preview available for this file type. Use Download instead."
+    },
+    "delete": {
+      "action": "Delete",
+      "title": "Delete",
+      "messageFile": "Delete “{{name}}”? This cannot be undone.",
+      "messageDir": "Delete the folder “{{name}}” and all its contents? This cannot be undone.",
+      "confirm": "Delete"
+    }
+  },
   "modal": {
     "close": "Close",
     "cancel": "Cancel",

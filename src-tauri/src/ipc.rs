@@ -20,6 +20,13 @@ pub fn builder() -> Builder<tauri::Wry> {
             ssh::ssh_write,
             ssh::ssh_resize,
             ssh::ssh_disconnect,
+            // --- sftp ---
+            ssh::sftp_read_dir,
+            ssh::sftp_home_dir,
+            ssh::sftp_read_file,
+            ssh::sftp_download,
+            ssh::sftp_upload_path,
+            ssh::sftp_remove,
         ])
         .events(collect_events![SshOutput, SshClosed, HostKeyPrompt])
 }

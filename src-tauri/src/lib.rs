@@ -22,12 +22,14 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
             app.manage(features::ssh::SshSessions::default());
             app.manage(features::ssh::PendingConnections::default());
             app.manage(features::ssh::HostKeyPrompts::default());
+            app.manage(features::ssh::SftpSessions::default());
             let db = db::init(app.handle())?;
             app.manage(db);
             Ok(())

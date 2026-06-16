@@ -1,7 +1,7 @@
 use tauri::{AppHandle, State};
 
 use super::session::{self, ConnectOutcome, ConnectParams, PasswordOutcome};
-use super::{Control, HostKeyPrompts, PendingConnections, SshSessions};
+use super::{sftp, Control, HostKeyPrompts, PendingConnections, SftpEntry, SshSessions};
 
 fn send(state: &SshSessions, session_id: &str, control: Control) {
     if let Some(tx) = state.0.lock().get(session_id) {
@@ -45,6 +45,72 @@ pub fn ssh_write(state: State<SshSessions>, session_id: String, data: String) {
 #[specta::specta]
 pub fn ssh_resize(state: State<SshSessions>, session_id: String, cols: u32, rows: u32) {
     send(&state, &session_id, Control::Resize { cols, rows });
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn sftp_read_dir(
+    app: AppHandle,
+    session_id: String,
+    path: String,
+) -> Result<Vec<SftpEntry>, String> {
+    sftp::read_dir(app, session_id, path)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn sftp_home_dir(app: AppHandle, session_id: String) -> Result<String, String> {
+    sftp::home_dir(app, session_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn sftp_read_file(
+    app: AppHandle,
+    session_id: String,
+    path: String,
+) -> Result<Vec<u8>, String> {
+    sftp::read_file(app, session_id, path)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn sftp_download(
+    app: AppHandle,
+    session_id: String,
+    remote_path: String,
+    local_path: String,
+) -> Result<(), String> {
+    sftp::download(app, session_id, remote_path, local_path)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn sftp_upload_path(
+    app: AppHandle,
+    session_id: String,
+    local_path: String,
+    remote_dir: String,
+) -> Result<(), String> {
+    sftp::upload_path(app, session_id, local_path, remote_dir)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn sftp_remove(app: AppHandle, session_id: String, path: String) -> Result<(), String> {
+    sftp::remove(app, session_id, path)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

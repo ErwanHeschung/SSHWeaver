@@ -16,6 +16,12 @@ export const commands = {
 	sshWrite: (sessionId: string, data: string) => __TAURI_INVOKE<void>("ssh_write", { sessionId, data }),
 	sshResize: (sessionId: string, cols: number, rows: number) => __TAURI_INVOKE<void>("ssh_resize", { sessionId, cols, rows }),
 	sshDisconnect: (sessionId: string) => __TAURI_INVOKE<void>("ssh_disconnect", { sessionId }),
+	sftpReadDir: (sessionId: string, path: string) => typedError<SftpEntry[], string>(__TAURI_INVOKE("sftp_read_dir", { sessionId, path })),
+	sftpHomeDir: (sessionId: string) => typedError<string, string>(__TAURI_INVOKE("sftp_home_dir", { sessionId })),
+	sftpReadFile: (sessionId: string, path: string) => typedError<number[], string>(__TAURI_INVOKE("sftp_read_file", { sessionId, path })),
+	sftpDownload: (sessionId: string, remotePath: string, localPath: string) => typedError<null, string>(__TAURI_INVOKE("sftp_download", { sessionId, remotePath, localPath })),
+	sftpUploadPath: (sessionId: string, localPath: string, remoteDir: string) => typedError<null, string>(__TAURI_INVOKE("sftp_upload_path", { sessionId, localPath, remoteDir })),
+	sftpRemove: (sessionId: string, path: string) => typedError<null, string>(__TAURI_INVOKE("sftp_remove", { sessionId, path })),
 };
 
 /** Events */
@@ -53,6 +59,17 @@ export type HostKeyPrompt = {
 };
 
 export type PasswordOutcome = "authenticated" | { failed: number } | "lockedOut";
+
+export type SftpEntry = {
+	name: string,
+	path: string,
+	kind: SftpKind,
+	size: number | null,
+	modified: number | null,
+	mode: number | null,
+};
+
+export type SftpKind = "file" | "dir" | "symlink" | "other";
 
 export type SshClosed = {
 	sessionId: string,

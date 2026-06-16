@@ -1,5 +1,8 @@
 pub mod commands;
 mod session;
+mod sftp;
+
+pub use sftp::{SftpEntry, SftpSessions};
 
 use std::collections::HashMap;
 

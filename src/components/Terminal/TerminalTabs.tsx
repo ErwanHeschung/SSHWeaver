@@ -1,9 +1,11 @@
 import type { MouseEvent } from "react";
-import { X } from "lucide-react";
+import { FolderTree, TerminalSquare, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SessionStatus } from "@/types/session";
 import type { TerminalSession } from "@/types/session";
 import { useSessionStore } from "@stores/useSessionStore";
+import { useSftpStore } from "@stores/useSftpStore";
+import type { SftpViewMode } from "@stores/useSftpStore";
 
 const STATUS_DOT: Record<SessionStatus, string> = {
   [SessionStatus.Connecting]: "bg-warning status-dot--pulse",
@@ -18,15 +20,51 @@ export function TerminalTabs() {
   const close = useSessionStore((s) => s.close);
 
   return (
-    <div className="flex h-9 flex-none items-stretch overflow-x-auto border-b border-border bg-surface">
-      {sessions.map((session) => (
-        <Tab
-          key={session.id}
-          session={session}
-          active={session.id === activeId}
-          onSelect={() => setActive(session.id)}
-          onClose={() => close(session.id)}
-        />
+    <div className="flex h-9 flex-none items-stretch border-b border-border bg-surface">
+      <div className="flex min-w-0 flex-1 items-stretch overflow-x-auto">
+        {sessions.map((session) => (
+          <Tab
+            key={session.id}
+            session={session}
+            active={session.id === activeId}
+            onSelect={() => setActive(session.id)}
+            onClose={() => close(session.id)}
+          />
+        ))}
+      </div>
+      {activeId && <ViewToggle sessionId={activeId} />}
+    </div>
+  );
+}
+
+function ViewToggle({ sessionId }: Readonly<{ sessionId: string }>) {
+  const { t } = useTranslation();
+  const mode = useSftpStore((s) => s.modes[sessionId] ?? "terminal");
+  const setMode = useSftpStore((s) => s.setMode);
+
+  const options: { value: SftpViewMode; icon: typeof TerminalSquare; label: string }[] = [
+    { value: "terminal", icon: TerminalSquare, label: t("sftp.toggle.terminal") },
+    { value: "files", icon: FolderTree, label: t("sftp.toggle.files") },
+  ];
+
+  return (
+    <div className="flex flex-none items-center gap-0.5 border-l border-border px-1.5">
+      {options.map(({ value, icon: Icon, label }) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setMode(sessionId, value)}
+          aria-pressed={mode === value}
+          title={label}
+          aria-label={label}
+          className={`rounded p-1 transition-colors ${
+            mode === value
+              ? "bg-surface-elevated text-foreground"
+              : "text-faint hover:bg-surface-hover hover:text-foreground"
+          }`}
+        >
+          <Icon className="size-4" strokeWidth={1.5} />
+        </button>
       ))}
     </div>
   );
