@@ -201,6 +201,9 @@ async fn ensure_remote_dir(sftp: &SftpSession, remote: &str) -> anyhow::Result<(
     }
 }
 
+#[cfg(test)]
+mod tests;
+
 fn upload_entry<'a>(
     sftp: &'a SftpSession,
     local: &'a Path,

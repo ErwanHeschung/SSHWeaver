@@ -627,3 +627,6 @@ fn emit_output(app: &AppHandle, session_id: &str, data: &[u8]) {
     }
     .emit(app);
 }
+
+#[cfg(test)]
+mod tests;

@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use rusqlite::Connection;
 use tauri::{AppHandle, Manager};
 
-mod migrations;
+pub(crate) mod migrations;
 
 pub struct Db(pub Mutex<Connection>);
 

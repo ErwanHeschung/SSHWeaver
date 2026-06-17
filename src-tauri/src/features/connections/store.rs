@@ -106,3 +106,6 @@ pub fn delete(conn: &Connection, id: &str) -> rusqlite::Result<()> {
     conn.execute("DELETE FROM connections WHERE id = ?1", [id])?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests;

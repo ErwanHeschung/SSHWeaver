@@ -88,3 +88,6 @@ pub fn connection_delete(db: State<Db>, id: String) -> CmdResult<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests;

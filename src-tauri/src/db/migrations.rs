@@ -17,11 +17,4 @@ pub fn runner() -> Migrations<'static> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn migrations_are_valid() {
-        runner().validate().expect("migrations should be valid");
-    }
-}
+mod tests;
