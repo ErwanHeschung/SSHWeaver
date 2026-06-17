@@ -48,7 +48,23 @@ pub fn connection_update(
     draft: ConnectionDraft,
 ) -> CmdResult<StoredConnection> {
     let conn = lock(&db)?;
-    store::update(&conn, &id, &draft).map_err(db_error)
+    let previous = store::get(&conn, &id).map_err(db_error)?;
+    let updated = store::update(&conn, &id, &draft).map_err(db_error)?;
+
+    let endpoint_changed = previous.host != updated.host
+        || previous.port != updated.port
+        || previous.username != updated.username;
+    if endpoint_changed {
+        if let Err(e) = secrets::delete(&id) {
+            tracing::warn!(
+                target: "ssh::audit",
+                error = %e,
+                "failed to remove saved password after endpoint change"
+            );
+        }
+    }
+
+    Ok(updated)
 }
 
 #[tauri::command]

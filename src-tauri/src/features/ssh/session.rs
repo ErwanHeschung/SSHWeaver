@@ -13,6 +13,7 @@ use specta::Type;
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 use tokio::io::{AsyncRead, AsyncWrite};
+use tokio::net::TcpStream;
 use tokio::sync::{mpsc, oneshot};
 use zeroize::Zeroizing;
 
@@ -227,17 +228,25 @@ pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<Conne
         reject_reason: reject_reason.clone(),
     };
 
-    let connect =
-        tokio::time::timeout(CONNECT_TIMEOUT, client::connect(config, (params.host.as_str(), params.port), handler));
-    let mut handle = match connect.await {
-        Ok(Ok(handle)) => handle,
-        Ok(Err(err)) => {
+    let stream = match tokio::time::timeout(
+        CONNECT_TIMEOUT,
+        TcpStream::connect((params.host.as_str(), params.port)),
+    )
+    .await
+    {
+        Ok(Ok(stream)) => stream,
+        Ok(Err(err)) => return Err(err.into()),
+        Err(_) => anyhow::bail!("connection timed out after {}s", CONNECT_TIMEOUT.as_secs()),
+    };
+
+    let mut handle = match client::connect_stream(config, stream, handler).await {
+        Ok(handle) => handle,
+        Err(err) => {
             if let Some(reason) = reject_reason.lock().take() {
                 anyhow::bail!(reason);
             }
             return Err(err.into());
         }
-        Err(_) => anyhow::bail!("connection timed out after {}s", CONNECT_TIMEOUT.as_secs()),
     };
 
     let mut result = handle.authenticate_none(&params.username).await?;

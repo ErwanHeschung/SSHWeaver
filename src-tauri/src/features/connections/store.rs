@@ -46,7 +46,7 @@ fn map_row(row: &Row) -> rusqlite::Result<StoredConnection> {
     })
 }
 
-fn get(conn: &Connection, id: &str) -> rusqlite::Result<StoredConnection> {
+pub fn get(conn: &Connection, id: &str) -> rusqlite::Result<StoredConnection> {
     conn.query_row(
         &format!("SELECT {SELECT_COLUMNS} FROM connections WHERE id = ?1"),
         [id],
