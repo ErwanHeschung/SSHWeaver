@@ -1,6 +1,7 @@
 use tauri_specta::{collect_commands, collect_events, Builder};
 
 use crate::features::connections::commands as connections;
+use crate::features::secrets::commands as secrets;
 use crate::features::ssh::commands as ssh;
 use crate::features::ssh::{HostKeyPrompt, SshClosed, SshOutput};
 
@@ -13,6 +14,9 @@ pub fn builder() -> Builder<tauri::Wry> {
             connections::connection_update,
             connections::connection_set_favorite,
             connections::connection_delete,
+            // --- secrets ---
+            secrets::secret_has_password,
+            secrets::secret_delete_password,
             // --- ssh ---
             ssh::ssh_connect,
             ssh::ssh_authenticate_password,

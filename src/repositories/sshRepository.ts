@@ -11,8 +11,8 @@ import { unwrap } from "./result";
 export const sshRepository = {
   connect: (params: ConnectParams) => unwrap(commands.sshConnect(params)),
 
-  authenticatePassword: (sessionId: string, password: string) =>
-    unwrap(commands.sshAuthenticatePassword(sessionId, password)),
+  authenticatePassword: (sessionId: string, password: string, remember: boolean) =>
+    unwrap(commands.sshAuthenticatePassword(sessionId, password, remember)),
 
   write: (sessionId: string, data: string) => commands.sshWrite(sessionId, data),
 

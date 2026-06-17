@@ -34,6 +34,7 @@ interface ConnectionState {
     connection: Connection,
     sessionId: string,
     password: string,
+    remember: boolean,
   ) => Promise<PasswordAuthResult>;
   abort: (sessionId: string) => void;
   remove: (id: string) => Promise<void>;
@@ -115,6 +116,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     try {
       const outcome = await sshRepository.connect({
         sessionId,
+        connectionId: connection.id,
         host: connection.host,
         port: connection.port,
         username: connection.username,
@@ -135,11 +137,12 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     }
   },
 
-  authenticatePassword: async (connection, sessionId, password) => {
+  authenticatePassword: async (connection, sessionId, password, remember) => {
     try {
       const outcome = await sshRepository.authenticatePassword(
         sessionId,
         password,
+        remember,
       );
       if (outcome === "authenticated") {
         useSessionStore.getState().markConnected(sessionId);

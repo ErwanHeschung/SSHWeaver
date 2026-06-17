@@ -21,8 +21,9 @@ pub async fn ssh_authenticate_password(
     app: AppHandle,
     session_id: String,
     password: String,
+    remember: bool,
 ) -> Result<PasswordOutcome, String> {
-    session::authenticate_password(app, session_id, password)
+    session::authenticate_password(app, session_id, password, remember)
         .await
         .map_err(|e| e.to_string())
 }

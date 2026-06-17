@@ -5,6 +5,7 @@ use tauri::State;
 
 use super::store::{self, ConnectionDraft, StoredConnection};
 use crate::db::Db;
+use crate::features::secrets::store as secrets;
 
 type CmdResult<T> = Result<T, String>;
 
@@ -52,5 +53,9 @@ pub fn connection_set_favorite(
 #[specta::specta]
 pub fn connection_delete(db: State<Db>, id: String) -> CmdResult<()> {
     let conn = lock(&db)?;
-    store::delete(&conn, &id).map_err(|e| e.to_string())
+    store::delete(&conn, &id).map_err(|e| e.to_string())?;
+    if let Err(e) = secrets::delete(&id) {
+        tracing::warn!(target: "ssh::audit", error = %e, "failed to remove saved password on delete");
+    }
+    Ok(())
 }

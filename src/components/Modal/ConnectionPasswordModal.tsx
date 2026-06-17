@@ -26,6 +26,7 @@ export function ConnectionPasswordModal({
   const formId = useId();
   const passwordRef = useRef<HTMLInputElement>(null);
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [failed, setFailed] = useState(false);
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
@@ -35,7 +36,12 @@ export function ConnectionPasswordModal({
     if (submitting || lockedOut) return;
     setSubmitting(true);
     setFailed(false);
-    const result = await authenticatePassword(connection, sessionId, password);
+    const result = await authenticatePassword(
+      connection,
+      sessionId,
+      password,
+      remember,
+    );
 
     if (result.status === "authenticated") {
       close();
@@ -116,6 +122,16 @@ export function ConnectionPasswordModal({
             disabled={lockedOut}
             className={INPUT_CLASS}
           />
+        </label>
+        <label className="flex items-center gap-2 text-xs text-muted">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            disabled={lockedOut}
+            className="h-3.5 w-3.5 rounded border-border accent-accent"
+          />
+          {t("modal.password.remember")}
         </label>
         {lockedOut ? (
           <p className="text-xs text-danger">

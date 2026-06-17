@@ -10,6 +10,7 @@
     "connect": "Connect",
     "edit": "Edit",
     "delete": "Delete",
+    "forgetPassword": "Forget saved password",
     "add": "Add connection"
   },
   "connection": {
@@ -78,6 +79,10 @@
       "title": "Delete connection",
       "message": "Are you sure you want to delete “{{name}}”? This action cannot be undone."
     },
+    "forgetPassword": {
+      "title": "Forget saved password",
+      "message": "Remove the saved password for “{{name}}” from the keystore? You'll be asked for it on the next connection."
+    },
     "connection": {
       "addTitle": "Add connection",
       "editTitle": "Edit connection",
@@ -94,6 +99,7 @@
     "password": {
       "title": "Connect to {{name}}",
       "label": "Password",
+      "remember": "Remember password",
       "connect": "Connect",
       "authenticating": "Connecting…",
       "failed": "Authentication failed. Try again.",

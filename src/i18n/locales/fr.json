@@ -10,6 +10,7 @@
     "connect": "Connecter",
     "edit": "Modifier",
     "delete": "Supprimer",
+    "forgetPassword": "Oublier le mot de passe enregistré",
     "add": "Ajouter une connexion"
   },
   "connection": {
@@ -78,6 +79,10 @@
       "title": "Supprimer la connexion",
       "message": "Voulez-vous vraiment supprimer « {{name}} » ? Cette action est irréversible."
     },
+    "forgetPassword": {
+      "title": "Oublier le mot de passe enregistré",
+      "message": "Retirer le mot de passe enregistré pour « {{name}} » du trousseau ? Il vous sera redemandé à la prochaine connexion."
+    },
     "connection": {
       "addTitle": "Ajouter une connexion",
       "editTitle": "Modifier la connexion",
@@ -94,6 +99,7 @@
     "password": {
       "title": "Se connecter à {{name}}",
       "label": "Mot de passe",
+      "remember": "Mémoriser le mot de passe",
       "connect": "Se connecter",
       "authenticating": "Connexion…",
       "failed": "Échec de l’authentification. Réessayez.",

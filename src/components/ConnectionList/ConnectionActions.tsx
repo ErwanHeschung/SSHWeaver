@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { MouseEvent, ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { MoreVertical, Pencil, PlugZap, Trash2 } from "lucide-react";
+import { KeyRound, MoreVertical, Pencil, PlugZap, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Connection } from "@/types/connection";
 import { useConnectionStore } from "@stores/useConnectionStore";
 import { useModalStore } from "@stores/useModalStore";
 import { useConnect } from "@/hooks/useConnect";
+import { secretsRepository } from "@repositories/secretsRepository";
 import { ConfirmModal } from "@components/Modal/ConfirmModal";
 import { ConnectionFormModal } from "@components/Modal/ConnectionFormModal";
 
@@ -32,6 +33,20 @@ export function ConnectionActions({ connection }: Readonly<ConnectionActionsProp
       confirmLabel: t("actions.delete"),
       danger: true,
       onConfirm: () => remove(connection.id),
+    });
+
+  const [hasPassword, setHasPassword] = useState(false);
+
+  const forgetPassword = () =>
+    openModal(ConfirmModal, {
+      title: t("modal.forgetPassword.title"),
+      message: t("modal.forgetPassword.message", { name: connection.name }),
+      confirmLabel: t("actions.forgetPassword"),
+      danger: true,
+      onConfirm: async () => {
+        await secretsRepository.deletePassword(connection.id);
+        setHasPassword(false);
+      },
     });
 
   const [open, setOpen] = useState(false);
@@ -66,10 +81,43 @@ export function ConnectionActions({ connection }: Readonly<ConnectionActionsProp
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    void secretsRepository.hasPassword(connection.id).then((has) => {
+      if (active) setHasPassword(has);
+    });
+    return () => {
+      active = false;
+    };
+  }, [open, connection.id]);
+
+  // Position the menu against the trigger, flipping up / clamping so it never
+  // runs off-screen. Re-runs when `hasPassword` toggles a row in or out, which
+  // changes the menu's height. useLayoutEffect measures before paint (no flash).
+  useLayoutEffect(() => {
+    if (!open) return;
+    const trigger = triggerRef.current?.getBoundingClientRect();
+    const menu = menuRef.current?.getBoundingClientRect();
+    if (!trigger || !menu) return;
+
+    const margin = 8;
+    let top = trigger.bottom + 4;
+    if (top + menu.height + margin > globalThis.innerHeight) {
+      // Not enough room below — flip above the trigger.
+      top = trigger.top - menu.height - 4;
+    }
+    top = Math.max(margin, Math.min(top, globalThis.innerHeight - menu.height - margin));
+
+    // Right-aligned to the trigger; grows leftward.
+    let left = trigger.right - menu.width;
+    left = Math.max(margin, Math.min(left, globalThis.innerWidth - menu.width - margin));
+
+    setCoords({ top, left });
+  }, [open, hasPassword]);
+
   const toggle = (e: MouseEvent) => {
     e.stopPropagation();
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (rect) setCoords({ top: rect.bottom + 4, left: rect.right });
     setOpen((prev) => !prev);
   };
 
@@ -103,7 +151,7 @@ export function ConnectionActions({ connection }: Readonly<ConnectionActionsProp
               position: "fixed",
               top: coords.top,
               left: coords.left,
-              transform: "translateX(-100%)",
+              visibility: coords.top === 0 ? "hidden" : "visible",
             }}
             className="z-50 min-w-40 overflow-hidden rounded-md border border-border bg-surface-elevated py-1 shadow-md"
           >
@@ -115,6 +163,12 @@ export function ConnectionActions({ connection }: Readonly<ConnectionActionsProp
               <Pencil className="size-3.5" />
               {t("actions.edit")}
             </MenuItem>
+            {hasPassword && (
+              <MenuItem onClick={run(forgetPassword)}>
+                <KeyRound className="size-3.5" />
+                {t("actions.forgetPassword")}
+              </MenuItem>
+            )}
             <MenuItem onClick={run(confirmDelete)} danger>
               <Trash2 className="size-3.5" />
               {t("actions.delete")}

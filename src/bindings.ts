@@ -10,8 +10,10 @@ export const commands = {
 	connectionUpdate: (id: string, draft: ConnectionDraft) => typedError<StoredConnection, string>(__TAURI_INVOKE("connection_update", { id, draft })),
 	connectionSetFavorite: (id: string, isFavorite: boolean) => typedError<StoredConnection, string>(__TAURI_INVOKE("connection_set_favorite", { id, isFavorite })),
 	connectionDelete: (id: string) => typedError<null, string>(__TAURI_INVOKE("connection_delete", { id })),
+	secretHasPassword: (connectionId: string) => __TAURI_INVOKE<boolean>("secret_has_password", { connectionId }),
+	secretDeletePassword: (connectionId: string) => typedError<null, string>(__TAURI_INVOKE("secret_delete_password", { connectionId })),
 	sshConnect: (params: ConnectParams) => typedError<ConnectOutcome, string>(__TAURI_INVOKE("ssh_connect", { params })),
-	sshAuthenticatePassword: (sessionId: string, password: string) => typedError<PasswordOutcome, string>(__TAURI_INVOKE("ssh_authenticate_password", { sessionId, password })),
+	sshAuthenticatePassword: (sessionId: string, password: string, remember: boolean) => typedError<PasswordOutcome, string>(__TAURI_INVOKE("ssh_authenticate_password", { sessionId, password, remember })),
 	sshHostKeyDecision: (sessionId: string, accept: boolean) => __TAURI_INVOKE<void>("ssh_host_key_decision", { sessionId, accept }),
 	sshWrite: (sessionId: string, data: string) => __TAURI_INVOKE<void>("ssh_write", { sessionId, data }),
 	sshResize: (sessionId: string, cols: number, rows: number) => __TAURI_INVOKE<void>("ssh_resize", { sessionId, cols, rows }),
@@ -36,6 +38,7 @@ export type ConnectOutcome = "connected" | "passwordRequired";
 
 export type ConnectParams = {
 	sessionId: string,
+	connectionId: string,
 	host: string,
 	port: number,
 	username: string,
