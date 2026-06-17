@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl wget file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm build
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Run backend tests
+        run: |
+          set -o pipefail
+          cargo test --manifest-path src-tauri/Cargo.toml 2>&1 | tee test_output.txt
+
+      - name: Count passing tests
+        id: count
+        run: |
+          PASSED=$(grep -oE '[0-9]+ passed' test_output.txt | awk '{ s += $1 } END { print s }')
+          echo "passed=${PASSED:-0}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate tests badge
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p badge
+          cat > badge/tests.json <<EOF
+          {"schemaVersion":1,"label":"tests","message":"${{ steps.count.outputs.passed }} passing","color":"brightgreen"}
+          EOF
+
+      - name: Publish badge to badges branch
+        if: github.ref == 'refs/heads/main'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: badges
+          folder: badge
+          clean: true
+          commit-message: "chore: update tests badge"
