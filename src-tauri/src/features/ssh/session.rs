@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -154,10 +154,24 @@ impl client::Handler for ClientHandler {
     ) -> Result<bool, Self::Error> {
         match check_known_hosts(&self.host, self.port, server_public_key) {
             Ok(true) => return Ok(true),
+            Ok(false) => {}
             Err(russh::keys::Error::KeyChanged { .. }) => {
                 return self.handle_changed_host_key(server_public_key).await;
             }
-            Ok(false) | Err(_) => {}
+            Err(e) => {
+                tracing::error!(
+                    target: "ssh::audit",
+                    host = %self.host,
+                    port = self.port,
+                    error = %e,
+                    "could not verify host key against known_hosts; rejecting connection"
+                );
+                self.reject(format!(
+                    "could not verify the host key for {}:{} ({e}); check ~/.ssh/known_hosts",
+                    self.host, self.port
+                ));
+                return Ok(false);
+            }
         }
 
         let fingerprint = server_public_key.fingerprint(HashAlg::Sha256).to_string();
@@ -497,11 +511,27 @@ fn replace_known_host(
                 .filter(|line| !line_carries_key(line, stale))
                 .collect();
             kept.push("");
-            std::fs::write(&path, kept.join("\n"))?;
+            atomic_write(&path, &kept.join("\n"))?;
         }
     }
 
     learn_known_hosts(host, port, new_key).map_err(std::io::Error::other)
+}
+
+fn atomic_write(path: &Path, contents: &str) -> std::io::Result<()> {
+    let dir = path
+        .parent()
+        .ok_or_else(|| std::io::Error::other("invalid known_hosts path"))?;
+    let tmp = dir.join(format!(".known_hosts.{}.tmp", uuid::Uuid::new_v4()));
+    if let Err(e) = std::fs::write(&tmp, contents) {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(e);
+    }
+    if let Err(e) = std::fs::rename(&tmp, path) {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(e);
+    }
+    Ok(())
 }
 
 fn line_carries_key(line: &str, keys: &[ssh_key::PublicKey]) -> bool {
