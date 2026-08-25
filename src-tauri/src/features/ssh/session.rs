@@ -18,7 +18,7 @@ use tokio::sync::{mpsc, oneshot};
 use zeroize::Zeroizing;
 
 use super::sftp::{SftpSessions, SftpSlot};
-use crate::features::secrets::store as secrets;
+use crate::features::secrets::store::{self as secrets, Key};
 use super::{
     Control, HostKeyPrompt, HostKeyPrompts, PendingConnections, SshClosed, SshOutput, SshSessions,
 };
@@ -33,6 +33,7 @@ pub struct ConnectParams {
     pub host: String,
     pub port: u16,
     pub username: String,
+    pub profile_id: Option<String>,
     pub cols: u32,
     pub rows: u32,
 }
@@ -56,7 +57,7 @@ const MAX_PASSWORD_ATTEMPTS: u32 = 3;
 
 pub struct Pending {
     handle: Handle<ClientHandler>,
-    connection_id: String,
+    secret: Key,
     username: String,
     cols: u32,
     rows: u32,
@@ -215,6 +216,13 @@ fn accepts(result: &AuthResult, method: MethodKind) -> bool {
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
 
+fn secret_key(params: &ConnectParams) -> Key {
+    match &params.profile_id {
+        Some(profile_id) => Key::profile(profile_id),
+        None => Key::connection(&params.connection_id),
+    }
+}
+
 pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<ConnectOutcome> {
     {
         let sessions = app.state::<SshSessions>();
@@ -293,7 +301,8 @@ pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<Conne
     }
 
     if accepts(&result, MethodKind::Password) {
-        if let Ok(Some(saved)) = secrets::get(&params.connection_id) {
+        let secret = secret_key(&params);
+        if let Ok(Some(saved)) = secrets::get(&secret) {
             let saved = Zeroizing::new(saved);
             let auth = handle
                 .authenticate_password(&params.username, saved.as_str())
@@ -309,13 +318,18 @@ pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<Conne
                 start_session(app, params.session_id, handle, params.cols, params.rows).await?;
                 return Ok(ConnectOutcome::Connected);
             }
-            let _ = secrets::delete(&params.connection_id);
+            // A shared profile password being refused by one server is not
+            // proof it is stale; leave it for the prompt to overwrite.
+            if secret.is_connection() {
+                let _ = secrets::delete(&secret);
+            }
             tracing::warn!(
                 target: "ssh::audit",
                 host = %params.host,
                 port = params.port,
                 user = %params.username,
-                "saved password rejected; removed from keystore"
+                shared = !secret.is_connection(),
+                "saved password rejected"
             );
         }
 
@@ -323,7 +337,7 @@ pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<Conne
             params.session_id,
             Pending {
                 handle,
-                connection_id: params.connection_id,
+                secret,
                 username: params.username,
                 cols: params.cols,
                 rows: params.rows,
@@ -372,7 +386,7 @@ pub async fn authenticate_password(
             "authenticated via password"
         );
         if remember {
-            if let Err(e) = secrets::set(&pending.connection_id, password.as_str()) {
+            if let Err(e) = secrets::set(&pending.secret, password.as_str()) {
                 tracing::warn!(
                     target: "ssh::audit",
                     user = %pending.username,

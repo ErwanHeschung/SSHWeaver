@@ -5,6 +5,10 @@
     "clear": "Effacer la recherche",
     "empty": "Aucune connexion ne correspond à « {{query}} »."
   },
+  "sidebar": {
+    "connections": "Connexions",
+    "profiles": "Profils"
+  },
   "actions": {
     "label": "Actions",
     "connect": "Connecter",
@@ -17,6 +21,17 @@
     "select": "Sélectionner {{name}}",
     "addFavorite": "Ajouter aux favoris",
     "removeFavorite": "Retirer des favoris"
+  },
+  "profiles": {
+    "subtitle": "Identifiants partagés",
+    "add": "Ajouter un profil",
+    "edit": "Modifier {{name}}",
+    "empty": "Aucun profil. Ajoutez-en un pour partager un nom d’utilisateur et un mot de passe entre plusieurs connexions.",
+    "passwordSaved": "Mot de passe enregistré",
+    "noPassword": "Aucun mot de passe enregistré",
+    "unused": "inutilisé",
+    "usedBy_one": "{{count}} connexion",
+    "usedBy_other": "{{count}} connexions"
   },
   "theme": {
     "toLight": "Passer au thème clair",
@@ -90,16 +105,22 @@
       "nameOptional": "Nom (facultatif)",
       "host": "Hôte",
       "port": "Port",
+      "profile": "Profil d’identifiants",
+      "noProfile": "Aucun (saisir un nom d’utilisateur ci-dessous)",
       "username": "Nom d’utilisateur",
+      "profileHint": "Se connecte en tant que {{username}}, avec le mot de passe enregistré pour ce profil.",
+      "profileNoPasswordHint": "Se connecte en tant que {{username}}. Aucun mot de passe n’est encore enregistré : il sera demandé une fois, puis réutilisé par toutes les connexions de ce profil.",
       "create": "Ajouter",
       "save": "Enregistrer",
       "connectAfterCreate": "Se connecter directement",
-      "duplicate": "Une connexion vers cet hôte, ce port et cet utilisateur existe déjà."
+      "duplicate": "Une connexion vers cet hôte, ce port et cet utilisateur existe déjà.",
+      "unknownProfile": "Ce profil d’identifiants n’existe plus."
     },
     "password": {
       "title": "Se connecter à {{name}}",
       "label": "Mot de passe",
       "remember": "Mémoriser le mot de passe",
+      "rememberProfile": "Enregistrer comme mot de passe de « {{name}} »",
       "connect": "Se connecter",
       "authenticating": "Connexion…",
       "failed": "Échec de l’authentification. Réessayez.",
@@ -118,6 +139,31 @@
       "hint": "Elle sera enregistrée dans ~/.ssh/known_hosts et approuvée lors des prochaines connexions.",
       "accept": "Accepter et se connecter",
       "reject": "Refuser"
+    },
+    "profile": {
+      "addTitle": "Ajouter un profil d’identifiants",
+      "editTitle": "Modifier le profil d’identifiants",
+      "name": "Nom du profil",
+      "namePlaceholder": "admin production",
+      "username": "Nom d’utilisateur",
+      "usernameHint": "Le modifier renomme le compte sur toutes les connexions utilisant ce profil.",
+      "password": "Mot de passe",
+      "passwordHint": "Conservé dans le trousseau de votre système d’exploitation, jamais dans la base de l’application. Laissez vide pour qu’il soit demandé à la connexion.",
+      "passwordUnchanged": "•••••••• (inchangé)",
+      "create": "Ajouter",
+      "save": "Enregistrer",
+      "duplicate": "Un profil portant ce nom existe déjà.",
+      "usernameCollision": "Une autre connexion utilise déjà ce nom d’utilisateur sur le même hôte et le même port."
+    },
+    "profileDelete": {
+      "title": "Supprimer le profil d’identifiants",
+      "message": "Supprimer « {{name}} » ? Son mot de passe enregistré sera retiré du trousseau. Cette action est irréversible.",
+      "messageInUse_one": "Supprimer « {{name}} » ? {{count}} connexion l’utilise : elle conserve son nom d’utilisateur mais perd le mot de passe partagé, qui vous sera redemandé à la prochaine connexion.",
+      "messageInUse_other": "Supprimer « {{name}} » ? {{count}} connexions l’utilisent : elles conservent leur nom d’utilisateur mais perdent le mot de passe partagé, qui leur sera redemandé à la prochaine connexion."
+    },
+    "profileForgetPassword": {
+      "title": "Oublier le mot de passe du profil",
+      "message": "Retirer du trousseau le mot de passe enregistré pour « {{name}} » ? Toutes les connexions utilisant ce profil le redemanderont."
     }
   },
   "settings": {

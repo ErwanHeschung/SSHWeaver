@@ -8,7 +8,7 @@ import { sshRepository } from "@repositories/sshRepository";
 
 export type ConnectionDraft = Pick<
   Connection,
-  "name" | "host" | "port" | "username"
+  "name" | "host" | "port" | "username" | "profileId"
 >;
 
 const withStatus = (
@@ -29,6 +29,8 @@ interface ConnectionState {
   setStatus: (id: string, status: ConnectionStatus) => void;
   create: (draft: ConnectionDraft) => Promise<Connection>;
   update: (id: string, draft: ConnectionDraft) => Promise<void>;
+  applyProfileUpdate: (profileId: string, username: string) => void;
+  applyProfileRemoval: (profileId: string) => void;
   connect: (connection: Connection) => Promise<ConnectResult>;
   authenticatePassword: (
     connection: Connection,
@@ -88,6 +90,21 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     }));
   },
 
+  // Patched in place, not reloaded: load() would drop every session's status.
+  applyProfileUpdate: (profileId, username) =>
+    set((state) => ({
+      connections: state.connections.map((c) =>
+        c.profileId === profileId ? { ...c, username } : c,
+      ),
+    })),
+
+  applyProfileRemoval: (profileId) =>
+    set((state) => ({
+      connections: state.connections.map((c) =>
+        c.profileId === profileId ? { ...c, profileId: null } : c,
+      ),
+    })),
+
   connect: async (connection) => {
     const sessions = useSessionStore.getState();
     const existing = sessions.sessions.find(
@@ -120,6 +137,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         host: connection.host,
         port: connection.port,
         username: connection.username,
+        profileId: connection.profileId,
         cols: 80,
         rows: 24,
       });

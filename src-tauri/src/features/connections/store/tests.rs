@@ -2,6 +2,7 @@ use super::*;
 
 fn db() -> Connection {
     let mut conn = Connection::open_in_memory().unwrap();
+    conn.pragma_update(None, "foreign_keys", "ON").unwrap();
     crate::db::migrations::runner().to_latest(&mut conn).unwrap();
     conn
 }
@@ -12,7 +13,20 @@ fn draft(name: &str, host: &str, port: u16, username: &str) -> ConnectionDraft {
         host: host.into(),
         port,
         username: username.into(),
+        profile_id: None,
     }
+}
+
+fn profile(conn: &Connection, name: &str, username: &str) -> String {
+    crate::features::profiles::store::create(
+        conn,
+        &crate::features::profiles::store::ProfileDraft {
+            name: name.into(),
+            username: username.into(),
+        },
+    )
+    .unwrap()
+    .id
 }
 
 #[test]
@@ -25,6 +39,7 @@ fn create_then_get_roundtrips_fields() {
     assert_eq!(created.port, 2222);
     assert_eq!(created.username, "deploy");
     assert!(!created.is_favorite);
+    assert_eq!(created.profile_id, None);
 
     let fetched = get(&conn, &created.id).unwrap();
     assert_eq!(fetched.id, created.id);
@@ -93,4 +108,122 @@ fn delete_removes_row() {
 
     assert!(list(&conn).unwrap().is_empty());
     assert!(get(&conn, &created.id).is_err());
+}
+
+#[test]
+fn create_records_the_profile_link() {
+    let conn = db();
+    let profile_id = profile(&conn, "ops", "deploy");
+
+    let created = create(
+        &conn,
+        &ConnectionDraft {
+            profile_id: Some(profile_id.clone()),
+            ..draft("prod", "example.com", 22, "deploy")
+        },
+    )
+    .unwrap();
+
+    assert_eq!(created.profile_id, Some(profile_id.clone()));
+    assert_eq!(get(&conn, &created.id).unwrap().profile_id, Some(profile_id));
+}
+
+#[test]
+fn update_can_attach_and_detach_a_profile() {
+    let conn = db();
+    let profile_id = profile(&conn, "ops", "deploy");
+    let created = create(&conn, &draft("c", "h", 22, "root")).unwrap();
+
+    let attached = update(
+        &conn,
+        &created.id,
+        &ConnectionDraft {
+            profile_id: Some(profile_id.clone()),
+            ..draft("c", "h", 22, "deploy")
+        },
+    )
+    .unwrap();
+    assert_eq!(attached.profile_id, Some(profile_id));
+
+    let detached = update(&conn, &created.id, &draft("c", "h", 22, "deploy")).unwrap();
+    assert_eq!(detached.profile_id, None);
+}
+
+#[test]
+fn set_username_for_profile_only_touches_linked_rows() {
+    let conn = db();
+    let profile_id = profile(&conn, "ops", "root");
+    let linked = create(
+        &conn,
+        &ConnectionDraft {
+            profile_id: Some(profile_id.clone()),
+            ..draft("linked", "a.example.com", 22, "root")
+        },
+    )
+    .unwrap();
+    let standalone = create(&conn, &draft("standalone", "b.example.com", 22, "root")).unwrap();
+
+    set_username_for_profile(&conn, &profile_id, "admin").unwrap();
+
+    assert_eq!(get(&conn, &linked.id).unwrap().username, "admin");
+    assert_eq!(get(&conn, &standalone.id).unwrap().username, "root");
+}
+
+#[test]
+fn set_username_for_profile_reports_endpoint_collisions() {
+    let conn = db();
+    let profile_id = profile(&conn, "ops", "root");
+    create(&conn, &draft("taken", "a.example.com", 22, "admin")).unwrap();
+    create(
+        &conn,
+        &ConnectionDraft {
+            profile_id: Some(profile_id.clone()),
+            ..draft("linked", "a.example.com", 22, "root")
+        },
+    )
+    .unwrap();
+
+    let err = set_username_for_profile(&conn, &profile_id, "admin").unwrap_err();
+    match err {
+        rusqlite::Error::SqliteFailure(_, Some(msg)) => assert_eq!(msg, DUPLICATE_ENDPOINT),
+        other => panic!("expected DUPLICATE_ENDPOINT, got {other:?}"),
+    }
+}
+
+#[test]
+fn clear_profile_detaches_without_deleting() {
+    let conn = db();
+    let profile_id = profile(&conn, "ops", "root");
+    let linked = create(
+        &conn,
+        &ConnectionDraft {
+            profile_id: Some(profile_id.clone()),
+            ..draft("linked", "a.example.com", 22, "root")
+        },
+    )
+    .unwrap();
+
+    clear_profile(&conn, &profile_id).unwrap();
+
+    let detached = get(&conn, &linked.id).unwrap();
+    assert_eq!(detached.profile_id, None);
+    assert_eq!(detached.username, "root");
+}
+
+#[test]
+fn deleting_a_profile_nulls_the_link_through_the_foreign_key() {
+    let conn = db();
+    let profile_id = profile(&conn, "ops", "root");
+    let linked = create(
+        &conn,
+        &ConnectionDraft {
+            profile_id: Some(profile_id.clone()),
+            ..draft("linked", "a.example.com", 22, "root")
+        },
+    )
+    .unwrap();
+
+    crate::features::profiles::store::delete(&conn, &profile_id).unwrap();
+
+    assert_eq!(get(&conn, &linked.id).unwrap().profile_id, None);
 }

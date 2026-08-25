@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Connection } from "@/types/connection";
 import { useModalStore } from "@stores/useModalStore";
 import { useConnectionStore } from "@stores/useConnectionStore";
+import { useProfileStore } from "@stores/useProfileStore";
 import { Modal } from "./Modal";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "./buttonStyles";
 
@@ -22,6 +23,9 @@ export function ConnectionPasswordModal({
   const close = useModalStore((s) => s.close);
   const authenticatePassword = useConnectionStore((s) => s.authenticatePassword);
   const abort = useConnectionStore((s) => s.abort);
+  const profile = useProfileStore((s) =>
+    s.profiles.find((p) => p.id === connection.profileId),
+  );
 
   const formId = useId();
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -131,7 +135,9 @@ export function ConnectionPasswordModal({
             disabled={lockedOut}
             className="h-3.5 w-3.5 rounded border-border accent-accent"
           />
-          {t("modal.password.remember")}
+          {profile
+            ? t("modal.password.rememberProfile", { name: profile.name })
+            : t("modal.password.remember")}
         </label>
         {lockedOut ? (
           <p className="text-xs text-danger">

@@ -10,6 +10,7 @@ export interface Connection {
   host: string;
   port: number;
   username: string;
+  profileId: string | null;
   status: ConnectionStatus;
   isFavorite: boolean;
 }

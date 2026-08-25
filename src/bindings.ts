@@ -10,6 +10,11 @@ export const commands = {
 	connectionUpdate: (id: string, draft: ConnectionDraft) => typedError<StoredConnection, string>(__TAURI_INVOKE("connection_update", { id, draft })),
 	connectionSetFavorite: (id: string, isFavorite: boolean) => typedError<StoredConnection, string>(__TAURI_INVOKE("connection_set_favorite", { id, isFavorite })),
 	connectionDelete: (id: string) => typedError<null, string>(__TAURI_INVOKE("connection_delete", { id })),
+	profilesList: () => typedError<Profile[], string>(__TAURI_INVOKE("profiles_list")),
+	profileCreate: (draft: ProfileDraft, password: string | null) => typedError<Profile, string>(__TAURI_INVOKE("profile_create", { draft, password })),
+	profileUpdate: (id: string, draft: ProfileDraft, password: string | null) => typedError<Profile, string>(__TAURI_INVOKE("profile_update", { id, draft, password })),
+	profileDelete: (id: string) => typedError<null, string>(__TAURI_INVOKE("profile_delete", { id })),
+	profileDeletePassword: (id: string) => typedError<null, string>(__TAURI_INVOKE("profile_delete_password", { id })),
 	secretHasPassword: (connectionId: string) => __TAURI_INVOKE<boolean>("secret_has_password", { connectionId }),
 	secretDeletePassword: (connectionId: string) => typedError<null, string>(__TAURI_INVOKE("secret_delete_password", { connectionId })),
 	sshConnect: (params: ConnectParams) => typedError<ConnectOutcome, string>(__TAURI_INVOKE("ssh_connect", { params })),
@@ -42,6 +47,7 @@ export type ConnectParams = {
 	host: string,
 	port: number,
 	username: string,
+	profileId: string | null,
 	cols: number,
 	rows: number,
 };
@@ -51,6 +57,7 @@ export type ConnectionDraft = {
 	host: string,
 	port: number,
 	username: string,
+	profileId: string | null,
 };
 
 export type HostKeyPrompt = {
@@ -62,6 +69,18 @@ export type HostKeyPrompt = {
 };
 
 export type PasswordOutcome = "authenticated" | { failed: number } | "lockedOut";
+
+export type Profile = {
+	id: string,
+	name: string,
+	username: string,
+	hasPassword: boolean,
+};
+
+export type ProfileDraft = {
+	name: string,
+	username: string,
+};
 
 export type SftpEntry = {
 	name: string,
@@ -91,6 +110,7 @@ export type StoredConnection = {
 	port: number,
 	username: string,
 	isFavorite: boolean,
+	profileId: string | null,
 };
 
 /* Tauri Specta runtime */
