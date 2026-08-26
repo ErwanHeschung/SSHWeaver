@@ -56,12 +56,14 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
   );
   const [connectAfter, setConnectAfter] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profilePicked, setProfilePicked] = useState(false);
 
   // A profile owns the account; the username field only appears without one.
   const selectedProfile = profiles.find((p) => p.id === draft.profileId) ?? null;
   const username = selectedProfile?.username ?? draft.username;
 
-  const selectProfile = (profileId: string) =>
+  const selectProfile = (profileId: string) => {
+    setProfilePicked(true);
     setDraft((d) => {
       if (profileId === NO_PROFILE) {
         return { ...d, profileId: null, username };
@@ -69,6 +71,21 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
       const profile = profiles.find((p) => p.id === profileId);
       return { ...d, profileId, username: profile?.username ?? d.username };
     });
+  };
+
+  // Profiles load lazily, so the default usually arrives after the first
+  // render. Applied only until the user picks for themselves — including when
+  // they deliberately pick "None".
+  useEffect(() => {
+    if (mode !== "add" || profilePicked) return;
+    const fallback = profiles.find((p) => p.isDefault);
+    if (!fallback) return;
+    setDraft((d) =>
+      d.profileId
+        ? d
+        : { ...d, profileId: fallback.id, username: fallback.username },
+    );
+  }, [profiles, mode, profilePicked]);
 
   const isDuplicate = useMemo(() => {
     const host = draft.host.trim().toLowerCase();

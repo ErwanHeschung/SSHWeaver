@@ -35,6 +35,10 @@ export function Combobox({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  // What the user has typed since opening the list, or null when the list was
+  // opened without typing. The field's own value must not act as a filter, or
+  // a pre-filled valid entry narrows the list to just itself.
+  const [typed, setTyped] = useState<string | null>(null);
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -42,6 +46,7 @@ export function Combobox({
   const close = useCallback(() => {
     setOpen(false);
     setActive(-1);
+    setTyped(null);
   }, []);
 
   const { triggerRef, popupRef, style, container } = useAnchoredPopup<
@@ -50,15 +55,14 @@ export function Combobox({
   >({ open, onClose: close, align: "start", matchWidth: true });
 
   // Typing narrows the suggestions; it never restricts what can be submitted.
-  const query = value.trim().toLowerCase();
-  const matches = query
+  const query = (typed ?? "").trim().toLowerCase();
+  const visible = query
     ? options.filter(
         (option) =>
           option.label.toLowerCase().includes(query) ||
           option.hint?.toLowerCase().includes(query),
       )
     : options;
-  const visible = matches.length > 0 ? matches : options;
 
   const pick = (index: number) => {
     const option = visible[index];
@@ -70,6 +74,7 @@ export function Combobox({
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "ArrowDown" && !open) {
       event.preventDefault();
+      setTyped(null);
       setOpen(true);
       return;
     }
@@ -122,6 +127,7 @@ export function Combobox({
           placeholder={placeholder}
           onChange={(e) => {
             onChange(e.target.value);
+            setTyped(e.target.value);
             setActive(-1);
             setOpen(true);
           }}
@@ -135,6 +141,7 @@ export function Combobox({
           tabIndex={-1}
           aria-label={t("form.showOptions", { field: label })}
           onClick={() => {
+            setTyped(null);
             setOpen((wasOpen) => !wasOpen);
             inputRef.current?.focus();
           }}

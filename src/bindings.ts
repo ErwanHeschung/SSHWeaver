@@ -20,6 +20,7 @@ export const commands = {
 	profileUpdate: (id: string, draft: ProfileDraft, password: string | null) => typedError<Profile, string>(__TAURI_INVOKE("profile_update", { id, draft, password })),
 	profileDelete: (id: string) => typedError<null, string>(__TAURI_INVOKE("profile_delete", { id })),
 	profileDeletePassword: (id: string) => typedError<null, string>(__TAURI_INVOKE("profile_delete_password", { id })),
+	profileSetDefault: (id: string, isDefault: boolean) => typedError<Profile, string>(__TAURI_INVOKE("profile_set_default", { id, isDefault })),
 	secretHasPassword: (connectionId: string) => __TAURI_INVOKE<boolean>("secret_has_password", { connectionId }),
 	secretDeletePassword: (connectionId: string) => typedError<null, string>(__TAURI_INVOKE("secret_delete_password", { connectionId })),
 	terminalWrite: (sessionId: string, data: string) => __TAURI_INVOKE<void>("terminal_write", { sessionId, data }),
@@ -118,6 +119,7 @@ export type Profile = {
 	name: string,
 	username: string,
 	hasPassword: boolean,
+	isDefault: boolean,
 };
 
 export type ProfileDraft = {

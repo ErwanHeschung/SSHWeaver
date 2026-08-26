@@ -52,16 +52,24 @@ export function useAnchoredPopup<T extends HTMLElement, P extends HTMLElement>({
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
+    // Capture catches scrolling in any container, which is what keeps the panel
+    // from drifting away from its trigger — but the panel scrolls its own list,
+    // and that must not dismiss it.
+    const onScroll = (e: Event) => {
+      const target = e.target as Node | null;
+      if (target && popupRef.current?.contains(target)) return;
+      onClose();
+    };
 
     globalThis.addEventListener("pointerdown", onPointerDown, true);
     document.addEventListener("keydown", onKeyDown);
     globalThis.addEventListener("resize", onClose);
-    globalThis.addEventListener("scroll", onClose, true);
+    globalThis.addEventListener("scroll", onScroll, true);
     return () => {
       globalThis.removeEventListener("pointerdown", onPointerDown, true);
       document.removeEventListener("keydown", onKeyDown);
       globalThis.removeEventListener("resize", onClose);
-      globalThis.removeEventListener("scroll", onClose, true);
+      globalThis.removeEventListener("scroll", onScroll, true);
     };
   }, [open, onClose]);
 

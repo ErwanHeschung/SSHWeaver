@@ -17,6 +17,7 @@ pub struct Profile {
     pub name: String,
     pub username: String,
     pub has_password: bool,
+    pub is_default: bool,
 }
 
 impl From<StoredProfile> for Profile {
@@ -26,6 +27,7 @@ impl From<StoredProfile> for Profile {
             id: stored.id,
             name: stored.name,
             username: stored.username,
+            is_default: stored.is_default,
         }
     }
 }
@@ -55,6 +57,14 @@ fn store_password(id: &str, password: Option<String>) {
             "failed to save profile password to keystore"
         );
     }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn profile_set_default(db: State<Db>, id: String, is_default: bool) -> CmdResult<Profile> {
+    let mut conn = sql::lock(&db)?;
+    let stored = store::set_default(&mut conn, &id, is_default).map_err(db_error)?;
+    Ok(Profile::from(stored))
 }
 
 #[tauri::command]

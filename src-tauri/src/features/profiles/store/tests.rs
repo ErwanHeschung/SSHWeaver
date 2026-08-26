@@ -97,3 +97,56 @@ fn delete_removes_row() {
     assert!(list(&conn).unwrap().is_empty());
     assert!(get(&conn, &created.id).is_err());
 }
+
+#[test]
+fn a_new_profile_is_not_the_default() {
+    let conn = db();
+    assert!(!create(&conn, &draft("ops", "deploy")).unwrap().is_default);
+}
+
+#[test]
+fn promoting_a_profile_demotes_the_previous_default() {
+    let mut conn = db();
+    let first = create(&conn, &draft("first", "a")).unwrap();
+    let second = create(&conn, &draft("second", "b")).unwrap();
+
+    assert!(set_default(&mut conn, &first.id, true).unwrap().is_default);
+    assert!(set_default(&mut conn, &second.id, true).unwrap().is_default);
+
+    assert!(!get(&conn, &first.id).unwrap().is_default);
+    assert!(get(&conn, &second.id).unwrap().is_default);
+}
+
+#[test]
+fn a_default_can_be_cleared_leaving_none() {
+    let mut conn = db();
+    let profile = create(&conn, &draft("ops", "deploy")).unwrap();
+    set_default(&mut conn, &profile.id, true).unwrap();
+
+    assert!(!set_default(&mut conn, &profile.id, false).unwrap().is_default);
+    assert!(list(&conn).unwrap().iter().all(|p| !p.is_default));
+}
+
+#[test]
+fn deleting_the_default_leaves_no_default_behind() {
+    let mut conn = db();
+    let profile = create(&conn, &draft("ops", "deploy")).unwrap();
+    set_default(&mut conn, &profile.id, true).unwrap();
+
+    delete(&conn, &profile.id).unwrap();
+
+    assert!(list(&conn).unwrap().iter().all(|p| !p.is_default));
+}
+
+#[test]
+fn the_schema_refuses_two_defaults() {
+    let conn = db();
+    let first = create(&conn, &draft("first", "a")).unwrap();
+    let second = create(&conn, &draft("second", "b")).unwrap();
+
+    conn.execute("UPDATE profiles SET is_default = 1 WHERE id = ?1", [&first.id])
+        .unwrap();
+    let err = conn.execute("UPDATE profiles SET is_default = 1 WHERE id = ?1", [&second.id]);
+
+    assert!(err.is_err(), "the partial unique index should reject a second default");
+}

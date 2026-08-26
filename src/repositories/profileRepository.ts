@@ -15,4 +15,7 @@ export const profileRepository = {
   remove: (id: string) => unwrap(commands.profileDelete(id)),
 
   deletePassword: (id: string) => unwrap(commands.profileDeletePassword(id)),
+
+  setDefault: (id: string, isDefault: boolean) =>
+    unwrap(commands.profileSetDefault(id, isDefault)),
 };

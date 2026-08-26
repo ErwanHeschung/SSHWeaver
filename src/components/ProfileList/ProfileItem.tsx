@@ -1,4 +1,4 @@
-import { KeyRound } from "lucide-react";
+import { KeyRound, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Profile } from "@/types/profile";
 import { useConnectionStore } from "@stores/useConnectionStore";
@@ -36,7 +36,15 @@ export function ProfileItem({ profile }: Readonly<ProfileItemProps>) {
       />
 
       <span className="pointer-events-none relative min-w-0 flex-1">
-        <span className="block truncate text-foreground">{profile.name}</span>
+        <span className="flex items-center gap-1.5">
+          <span className="truncate text-foreground">{profile.name}</span>
+          {profile.isDefault && (
+            <Star
+              aria-label={t("profiles.isDefault")}
+              className="size-3 flex-none fill-accent text-accent"
+            />
+          )}
+        </span>
         <span className="block truncate text-xs text-muted">{meta}</span>
       </span>
 

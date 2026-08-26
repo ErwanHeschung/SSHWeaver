@@ -16,7 +16,9 @@
     "edit": "Edit",
     "delete": "Delete",
     "forgetPassword": "Forget saved password",
-    "add": "Add connection"
+    "add": "Add connection",
+    "setDefault": "Set as default",
+    "unsetDefault": "Remove as default"
   },
   "connection": {
     "select": "Select {{name}}",
@@ -33,7 +35,8 @@
     "noPassword": "No password saved",
     "unused": "unused",
     "usedBy_one": "{{count}} connection",
-    "usedBy_other": "{{count}} connections"
+    "usedBy_other": "{{count}} connections",
+    "isDefault": "Default profile"
   },
   "theme": {
     "toLight": "Switch to light theme",

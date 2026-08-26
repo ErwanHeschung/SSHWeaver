@@ -10,6 +10,7 @@ pub struct StoredProfile {
     pub id: String,
     pub name: String,
     pub username: String,
+    pub is_default: bool,
 }
 
 #[derive(Debug, Deserialize, Type)]
@@ -19,7 +20,7 @@ pub struct ProfileDraft {
     pub username: String,
 }
 
-const SELECT_COLUMNS: &str = "id, name, username";
+const SELECT_COLUMNS: &str = "id, name, username, is_default";
 
 pub const DUPLICATE_NAME: &str = "DUPLICATE_PROFILE_NAME";
 
@@ -32,6 +33,7 @@ fn map_row(row: &Row) -> rusqlite::Result<StoredProfile> {
         id: row.get("id")?,
         name: row.get("name")?,
         username: row.get("username")?,
+        is_default: row.get("is_default")?,
     })
 }
 
@@ -79,6 +81,31 @@ pub fn update(
 pub fn delete(conn: &Connection, id: &str) -> rusqlite::Result<()> {
     conn.execute("DELETE FROM profiles WHERE id = ?1", [id])?;
     Ok(())
+}
+
+/// Promoting one profile demotes whichever held the flag. Both statements run
+/// in a transaction: the partial unique index would reject the second write if
+/// the first were rolled back on its own.
+pub fn set_default(
+    conn: &mut Connection,
+    id: &str,
+    is_default: bool,
+) -> rusqlite::Result<StoredProfile> {
+    let tx = conn.transaction()?;
+    tx.execute(
+        "UPDATE profiles SET is_default = 0, updated_at = datetime('now')
+         WHERE is_default = 1",
+        [],
+    )?;
+    if is_default {
+        tx.execute(
+            "UPDATE profiles SET is_default = 1, updated_at = datetime('now')
+             WHERE id = ?1",
+            [id],
+        )?;
+    }
+    tx.commit()?;
+    get(conn, id)
 }
 
 #[cfg(test)]

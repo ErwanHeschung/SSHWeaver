@@ -1,4 +1,4 @@
-import { KeyRound, Pencil, Trash2 } from "lucide-react";
+import { KeyRound, Pencil, Star, StarOff, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Profile } from "@/types/profile";
 import { useModalStore } from "@stores/useModalStore";
@@ -16,6 +16,7 @@ export function ProfileActions({ profile, usedBy }: Readonly<ProfileActionsProps
   const { t } = useTranslation();
   const remove = useProfileStore((s) => s.remove);
   const forget = useProfileStore((s) => s.forgetPassword);
+  const setDefault = useProfileStore((s) => s.setDefault);
   const openModal = useModalStore((s) => s.open);
 
   const edit = () => openModal(ProfileFormModal, { mode: "edit", profile });
@@ -46,6 +47,14 @@ export function ProfileActions({ profile, usedBy }: Readonly<ProfileActionsProps
       <MenuItem onClick={edit}>
         <Pencil className="size-3.5" />
         {t("actions.edit")}
+      </MenuItem>
+      <MenuItem onClick={() => void setDefault(profile.id, !profile.isDefault)}>
+        {profile.isDefault ? (
+          <StarOff className="size-3.5" />
+        ) : (
+          <Star className="size-3.5" />
+        )}
+        {t(profile.isDefault ? "actions.unsetDefault" : "actions.setDefault")}
       </MenuItem>
       {profile.hasPassword && (
         <MenuItem onClick={confirmForget}>

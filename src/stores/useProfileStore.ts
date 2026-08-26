@@ -20,6 +20,7 @@ interface ProfileState extends LoadState {
   ) => Promise<Profile>;
   remove: (id: string) => Promise<void>;
   forgetPassword: (id: string) => Promise<void>;
+  setDefault: (id: string, isDefault: boolean) => Promise<void>;
 }
 
 const byName = (a: Profile, b: Profile) =>
@@ -59,6 +60,18 @@ export const useProfileStore = create<ProfileState>((set, get) => {
       await profileRepository.remove(id);
       set((state) => ({ profiles: state.profiles.filter((p) => p.id !== id) }));
       useConnectionStore.getState().applyProfileRemoval(id);
+    },
+
+    // The backend clears the previous default, so mirror that here rather than
+    // reloading: a reload would drop nothing, but two sources of truth would.
+    setDefault: async (id, isDefault) => {
+      await profileRepository.setDefault(id, isDefault);
+      set((state) => ({
+        profiles: state.profiles.map((p) => ({
+          ...p,
+          isDefault: isDefault && p.id === id,
+        })),
+      }));
     },
 
     forgetPassword: async (id) => {

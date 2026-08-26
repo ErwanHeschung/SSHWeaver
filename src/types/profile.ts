@@ -3,4 +3,5 @@ export interface Profile {
   name: string;
   username: string;
   hasPassword: boolean;
+  isDefault: boolean;
 }

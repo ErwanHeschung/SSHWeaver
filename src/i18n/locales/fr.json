@@ -16,7 +16,9 @@
     "edit": "Modifier",
     "delete": "Supprimer",
     "forgetPassword": "Oublier le mot de passe enregistré",
-    "add": "Ajouter une connexion"
+    "add": "Ajouter une connexion",
+    "setDefault": "Définir par défaut",
+    "unsetDefault": "Retirer le rôle par défaut"
   },
   "connection": {
     "select": "Sélectionner {{name}}",
@@ -33,7 +35,8 @@
     "noPassword": "Aucun mot de passe enregistré",
     "unused": "inutilisé",
     "usedBy_one": "{{count}} connexion",
-    "usedBy_other": "{{count}} connexions"
+    "usedBy_other": "{{count}} connexions",
+    "isDefault": "Profil par défaut"
   },
   "theme": {
     "toLight": "Passer au thème clair",

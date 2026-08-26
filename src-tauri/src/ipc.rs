@@ -30,6 +30,7 @@ pub fn builder() -> Builder<tauri::Wry> {
             profiles::profile_update,
             profiles::profile_delete,
             profiles::profile_delete_password,
+            profiles::profile_set_default,
             // --- secrets ---
             secrets::secret_has_password,
             secrets::secret_delete_password,
