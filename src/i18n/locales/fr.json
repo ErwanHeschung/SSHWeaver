@@ -7,7 +7,8 @@
   },
   "sidebar": {
     "connections": "Connexions",
-    "profiles": "Profils"
+    "profiles": "Profils",
+    "console": "Console"
   },
   "actions": {
     "label": "Actions",
@@ -20,7 +21,8 @@
   "connection": {
     "select": "Sélectionner {{name}}",
     "addFavorite": "Ajouter aux favoris",
-    "removeFavorite": "Retirer des favoris"
+    "removeFavorite": "Retirer des favoris",
+    "empty": "Aucune connexion. Ajoutez-en une pour commencer."
   },
   "profiles": {
     "subtitle": "Identifiants partagés",
@@ -48,7 +50,7 @@
   "terminal": {
     "empty": "Aucune session active",
     "emptyHint": "Connectez-vous à un serveur depuis la barre latérale pour ouvrir un terminal.",
-    "connecting": "Connexion à {{host}}:{{port}}…",
+    "connecting": "Connexion à {{target}}…",
     "connectFailed": "Échec de la connexion : {{error}}",
     "sessionClosed": "Session fermée.",
     "search": {
@@ -164,6 +166,28 @@
     "profileForgetPassword": {
       "title": "Oublier le mot de passe du profil",
       "message": "Retirer du trousseau le mot de passe enregistré pour « {{name}} » ? Toutes les connexions utilisant ce profil le redemanderont."
+    },
+    "console": {
+      "addTitle": "Ajouter une connexion console",
+      "editTitle": "Modifier la connexion console",
+      "nameOptional": "Nom (facultatif)",
+      "port": "Port série",
+      "portHint_one": "{{count}} port détecté. Choisissez-le, ou saisissez un port pas encore branché.",
+      "portHint_other": "{{count}} ports détectés. Choisissez-en un, ou saisissez un port pas encore branché.",
+      "portHintEmpty": "Aucun port série détecté. Vous pouvez tout de même en saisir un.",
+      "baudRate": "Débit (bauds)",
+      "dataBits": "Bits de données",
+      "parity": "Parité",
+      "stopBits": "Bits d’arrêt",
+      "flowControl": "Contrôle de flux",
+      "create": "Ajouter",
+      "save": "Enregistrer",
+      "connectAfterCreate": "Se connecter immédiatement",
+      "duplicate": "Une connexion console avec exactement ces réglages existe déjà."
+    },
+    "consoleDelete": {
+      "title": "Supprimer la connexion console",
+      "message": "Voulez-vous vraiment supprimer « {{name}} » ? Cette action est irréversible."
     }
   },
   "settings": {
@@ -186,5 +210,36 @@
       "english": "English",
       "french": "Français"
     }
+  },
+  "console": {
+    "add": "Ajouter une connexion console",
+    "empty": "Aucune connexion console. Ajoutez-en une pour ouvrir un port série.",
+    "search": {
+      "placeholder": "Rechercher une connexion console…",
+      "label": "Rechercher une connexion console",
+      "empty": "Aucune connexion console ne correspond à « {{query}} »."
+    },
+    "parity": {
+      "none": "Aucune",
+      "odd": "Impaire",
+      "even": "Paire"
+    },
+    "stopBits": {
+      "one": "1",
+      "two": "2"
+    },
+    "flowControl": {
+      "none": "Aucun",
+      "hardware": "RTS/CTS",
+      "software": "XON/XOFF"
+    }
+  },
+  "list": {
+    "loading": "Chargement…",
+    "error": "Chargement impossible : {{error}}",
+    "retry": "Réessayer"
+  },
+  "form": {
+    "showOptions": "Afficher les options : {{field}}"
   }
 }

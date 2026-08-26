@@ -1,7 +1,9 @@
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { Connection } from "@/types/connection";
+import { Select } from "@components/Form/Select";
+import { INPUT_CLASS } from "@components/Form/fieldStyles";
 import { useModalStore } from "@stores/useModalStore";
 import { useConnectionStore } from "@stores/useConnectionStore";
 import type { ConnectionDraft } from "@stores/useConnectionStore";
@@ -25,9 +27,6 @@ const EMPTY_DRAFT: ConnectionDraft = {
 
 const NO_PROFILE = "";
 
-const INPUT_CLASS =
-  "h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground transition-colors placeholder:text-faint focus:border-accent focus:outline-none";
-
 export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFormProps>) {
   const { t } = useTranslation();
   const close = useModalStore((s) => s.close);
@@ -36,6 +35,11 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
   const connections = useConnectionStore((s) => s.connections);
   const profiles = useProfileStore((s) => s.profiles);
   const connectTo = useConnect();
+
+  // The profile picker reads a list this tab never loads for itself.
+  useEffect(() => {
+    void useProfileStore.getState().ensureLoaded();
+  }, []);
 
   const formId = useId();
   const nameRef = useRef<HTMLInputElement>(null);
@@ -183,18 +187,18 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
         </div>
 
         <Field label={t("modal.connection.profile")}>
-          <select
+          <Select
             value={draft.profileId ?? NO_PROFILE}
-            onChange={(e) => selectProfile(e.target.value)}
-            className={INPUT_CLASS}
-          >
-            <option value={NO_PROFILE}>{t("modal.connection.noProfile")}</option>
-            {profiles.map((profile) => (
-              <option key={profile.id} value={profile.id}>
-                {profile.name} ({profile.username})
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: NO_PROFILE, label: t("modal.connection.noProfile") },
+              ...profiles.map((profile) => ({
+                value: profile.id,
+                label: `${profile.name} (${profile.username})`,
+              })),
+            ]}
+            onChange={selectProfile}
+            label={t("modal.connection.profile")}
+          />
           {selectedProfile && (
             <span className="block text-xs text-faint">
               {t(

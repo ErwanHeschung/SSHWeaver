@@ -1,7 +1,7 @@
 import type { MouseEvent } from "react";
 import { FolderTree, TerminalSquare, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { SessionStatus } from "@/types/session";
+import { SessionKind, SessionStatus } from "@/types/session";
 import type { TerminalSession } from "@/types/session";
 import { useSessionStore } from "@stores/useSessionStore";
 import { useSftpStore } from "@stores/useSftpStore";
@@ -18,6 +18,8 @@ export function TerminalTabs() {
   const activeId = useSessionStore((s) => s.activeId);
   const setActive = useSessionStore((s) => s.setActive);
   const close = useSessionStore((s) => s.close);
+  // Only an SSH session has a file side; a serial line has nothing to browse.
+  const activeSession = sessions.find((s) => s.id === activeId);
 
   return (
     <div className="flex h-9 flex-none items-stretch border-b border-border bg-surface">
@@ -32,7 +34,9 @@ export function TerminalTabs() {
           />
         ))}
       </div>
-      {activeId && <ViewToggle sessionId={activeId} />}
+      {activeSession?.kind === SessionKind.Ssh && (
+        <ViewToggle sessionId={activeSession.id} />
+      )}
     </div>
   );
 }

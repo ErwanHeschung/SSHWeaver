@@ -10,6 +10,11 @@ export const commands = {
 	connectionUpdate: (id: string, draft: ConnectionDraft) => typedError<StoredConnection, string>(__TAURI_INVOKE("connection_update", { id, draft })),
 	connectionSetFavorite: (id: string, isFavorite: boolean) => typedError<StoredConnection, string>(__TAURI_INVOKE("connection_set_favorite", { id, isFavorite })),
 	connectionDelete: (id: string) => typedError<null, string>(__TAURI_INVOKE("connection_delete", { id })),
+	consoleConnectionsList: () => typedError<StoredConsoleConnection[], string>(__TAURI_INVOKE("console_connections_list")),
+	consoleConnectionCreate: (draft: ConsoleConnectionDraft) => typedError<StoredConsoleConnection, string>(__TAURI_INVOKE("console_connection_create", { draft })),
+	consoleConnectionUpdate: (id: string, draft: ConsoleConnectionDraft) => typedError<StoredConsoleConnection, string>(__TAURI_INVOKE("console_connection_update", { id, draft })),
+	consoleConnectionSetFavorite: (id: string, isFavorite: boolean) => typedError<StoredConsoleConnection, string>(__TAURI_INVOKE("console_connection_set_favorite", { id, isFavorite })),
+	consoleConnectionDelete: (id: string) => typedError<null, string>(__TAURI_INVOKE("console_connection_delete", { id })),
 	profilesList: () => typedError<Profile[], string>(__TAURI_INVOKE("profiles_list")),
 	profileCreate: (draft: ProfileDraft, password: string | null) => typedError<Profile, string>(__TAURI_INVOKE("profile_create", { draft, password })),
 	profileUpdate: (id: string, draft: ProfileDraft, password: string | null) => typedError<Profile, string>(__TAURI_INVOKE("profile_update", { id, draft, password })),
@@ -17,12 +22,19 @@ export const commands = {
 	profileDeletePassword: (id: string) => typedError<null, string>(__TAURI_INVOKE("profile_delete_password", { id })),
 	secretHasPassword: (connectionId: string) => __TAURI_INVOKE<boolean>("secret_has_password", { connectionId }),
 	secretDeletePassword: (connectionId: string) => typedError<null, string>(__TAURI_INVOKE("secret_delete_password", { connectionId })),
+	terminalWrite: (sessionId: string, data: string) => __TAURI_INVOKE<void>("terminal_write", { sessionId, data }),
+	terminalResize: (sessionId: string, cols: number, rows: number) => __TAURI_INVOKE<void>("terminal_resize", { sessionId, cols, rows }),
 	sshConnect: (params: ConnectParams) => typedError<ConnectOutcome, string>(__TAURI_INVOKE("ssh_connect", { params })),
 	sshAuthenticatePassword: (sessionId: string, password: string, remember: boolean) => typedError<PasswordOutcome, string>(__TAURI_INVOKE("ssh_authenticate_password", { sessionId, password, remember })),
 	sshHostKeyDecision: (sessionId: string, accept: boolean) => __TAURI_INVOKE<void>("ssh_host_key_decision", { sessionId, accept }),
-	sshWrite: (sessionId: string, data: string) => __TAURI_INVOKE<void>("ssh_write", { sessionId, data }),
-	sshResize: (sessionId: string, cols: number, rows: number) => __TAURI_INVOKE<void>("ssh_resize", { sessionId, cols, rows }),
+	/**
+	 *  Closing an SSH session also drops any half-finished authentication: the user
+	 *  may be cancelling from the password prompt, before a session ever existed.
+	 */
 	sshDisconnect: (sessionId: string) => __TAURI_INVOKE<void>("ssh_disconnect", { sessionId }),
+	consoleListPorts: () => typedError<AvailablePort[], string>(__TAURI_INVOKE("console_list_ports")),
+	consoleConnect: (params: ConsoleParams) => typedError<null, string>(__TAURI_INVOKE("console_connect", { params })),
+	consoleDisconnect: (sessionId: string) => __TAURI_INVOKE<void>("console_disconnect", { sessionId }),
 	sftpReadDir: (sessionId: string, path: string) => typedError<SftpEntry[], string>(__TAURI_INVOKE("sftp_read_dir", { sessionId, path })),
 	sftpHomeDir: (sessionId: string) => typedError<string, string>(__TAURI_INVOKE("sftp_home_dir", { sessionId })),
 	sftpReadFile: (sessionId: string, path: string) => typedError<number[], string>(__TAURI_INVOKE("sftp_read_file", { sessionId, path })),
@@ -34,11 +46,18 @@ export const commands = {
 /** Events */
 export const events = {
 	hostKeyPrompt: makeEvent<HostKeyPrompt>("host-key-prompt"),
-	sshClosed: makeEvent<SshClosed>("ssh-closed"),
-	sshOutput: makeEvent<SshOutput>("ssh-output"),
+	terminalClosed: makeEvent<TerminalClosed>("terminal-closed"),
+	terminalOutput: makeEvent<TerminalOutput>("terminal-output"),
 };
 
 /* Types */
+/**  A serial port the machine currently exposes. */
+export type AvailablePort = {
+	name: string,
+	/**  What the OS knows about the device, to tell several adapters apart. */
+	description: string | null,
+};
+
 export type ConnectOutcome = "connected" | "passwordRequired";
 
 export type ConnectParams = {
@@ -52,6 +71,16 @@ export type ConnectParams = {
 	rows: number,
 };
 
+/**
+ *  What every saved connection carries, whatever transport it opens. SSH and
+ *  console connections share nothing else, so they live in separate tables.
+ */
+export type ConnectionBase = {
+	id: string,
+	name: string,
+	isFavorite: boolean,
+};
+
 export type ConnectionDraft = {
 	name: string,
 	host: string,
@@ -60,6 +89,18 @@ export type ConnectionDraft = {
 	profileId: string | null,
 };
 
+export type ConsoleConnectionDraft = {
+	name: string,
+	settings: SerialSettings,
+};
+
+export type ConsoleParams = {
+	sessionId: string,
+	settings: SerialSettings,
+};
+
+export type FlowControl = "none" | "hardware" | "software";
+
 export type HostKeyPrompt = {
 	sessionId: string,
 	host: string,
@@ -67,6 +108,8 @@ export type HostKeyPrompt = {
 	fingerprint: string,
 	changed: boolean,
 };
+
+export type Parity = "none" | "odd" | "even";
 
 export type PasswordOutcome = "authenticated" | { failed: number } | "lockedOut";
 
@@ -82,6 +125,22 @@ export type ProfileDraft = {
 	username: string,
 };
 
+/**
+ *  Line settings for a console (serial) connection.
+ * 
+ *  Mark/space parity and 1.5 stop bits are absent on purpose: `serialport`
+ *  exposes neither on any platform, and macOS has no termios route to them at
+ *  all. Adding them needs a per-platform path plus a migration.
+ */
+export type SerialSettings = {
+	portName: string,
+	baudRate: number,
+	dataBits: number,
+	parity: Parity,
+	stopBits: StopBits,
+	flowControl: FlowControl,
+};
+
 export type SftpEntry = {
 	name: string,
 	path: string,
@@ -93,24 +152,27 @@ export type SftpEntry = {
 
 export type SftpKind = "file" | "dir" | "symlink" | "other";
 
-export type SshClosed = {
+export type StopBits = "one" | "two";
+
+export type StoredConnection = {
+	host: string,
+	port: number,
+	username: string,
+	profileId: string | null,
+} & ConnectionBase;
+
+export type StoredConsoleConnection = {
+	settings: SerialSettings,
+} & ConnectionBase;
+
+export type TerminalClosed = {
 	sessionId: string,
 	message: string | null,
 };
 
-export type SshOutput = {
+export type TerminalOutput = {
 	sessionId: string,
 	data: number[],
-};
-
-export type StoredConnection = {
-	id: string,
-	name: string,
-	host: string,
-	port: number,
-	username: string,
-	isFavorite: boolean,
-	profileId: string | null,
 };
 
 /* Tauri Specta runtime */

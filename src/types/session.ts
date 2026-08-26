@@ -4,13 +4,19 @@ export enum SessionStatus {
   Closed = "closed",
 }
 
+/** Transports close differently, and only SSH can browse files. */
+export enum SessionKind {
+  Ssh = "ssh",
+  Console = "console",
+}
+
 export interface TerminalSession {
   id: string;
   connectionId: string;
+  kind: SessionKind;
   title: string;
-  username: string;
-  host: string;
-  port: number;
+  /** What the session is attached to, as printed in the terminal banner. */
+  target: string;
   status: SessionStatus;
   error?: string;
 }

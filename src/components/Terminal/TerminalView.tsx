@@ -12,9 +12,9 @@ import i18n from "@i18n/index";
 import { ConnectionStatus } from "@/types/connection";
 import { SessionStatus } from "@/types/session";
 import type { TerminalSession } from "@/types/session";
-import { useConnectionStore } from "@stores/useConnectionStore";
 import { useSessionStore } from "@stores/useSessionStore";
-import { sshRepository } from "@repositories/sshRepository";
+import { setConnectionStatus } from "@stores/connectionStatus";
+import { terminalRepository } from "@repositories/terminalRepository";
 import { readTerminalTheme } from "./terminalTheme";
 
 interface TerminalViewProps {
@@ -117,7 +117,7 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
     });
 
     term.writeln(
-      `${DIM}${i18n.t("terminal.connecting", { host: session.host, port: session.port })}${RESET}`,
+      `${DIM}${i18n.t("terminal.connecting", { target: session.target })}${RESET}`,
     );
 
     const isConnected = () =>
@@ -125,10 +125,10 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
         ?.status === SessionStatus.Connected;
 
     const onData = term.onData((data) => {
-      if (isConnected()) void sshRepository.write(session.id, data);
+      if (isConnected()) void terminalRepository.write(session.id, data);
     });
     const onResize = term.onResize(({ cols, rows }) => {
-      if (isConnected()) void sshRepository.resize(session.id, cols, rows);
+      if (isConnected()) void terminalRepository.resize(session.id, cols, rows);
     });
 
     let disposed = false;
@@ -136,12 +136,12 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
     let unlistenClosed: (() => void) | undefined;
 
     void (async () => {
-      const offOutput = await sshRepository.onOutput((e) => {
+      const offOutput = await terminalRepository.onOutput((e) => {
         if (e.payload.sessionId === session.id) {
           term.write(new Uint8Array(e.payload.data));
         }
       });
-      const offClosed = await sshRepository.onClosed((e) => {
+      const offClosed = await terminalRepository.onClosed((e) => {
         if (e.payload.sessionId !== session.id) return;
         term.writeln(
           e.payload.message
@@ -149,9 +149,7 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
             : `\r\n${DIM}${i18n.t("terminal.sessionClosed")}${RESET}`,
         );
         useSessionStore.getState().markClosed(session.id);
-        useConnectionStore
-          .getState()
-          .setStatus(session.connectionId, ConnectionStatus.Disconnected);
+        setConnectionStatus(session.kind, session.connectionId, ConnectionStatus.Disconnected);
       });
 
       if (disposed) {
@@ -191,10 +189,8 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
         .getState()
         .sessions.some((s) => s.id === session.id);
       if (!stillOpen) {
-        void sshRepository.disconnect(session.id);
-        useConnectionStore
-          .getState()
-          .setStatus(session.connectionId, ConnectionStatus.Disconnected);
+        void terminalRepository.disconnect(session.kind, session.id);
+        setConnectionStatus(session.kind, session.connectionId, ConnectionStatus.Disconnected);
       }
     };
   }, [session.id]);
@@ -208,16 +204,16 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
       if (!term) return;
       term.reset();
       term.writeln(
-        `${DIM}${i18n.t("terminal.connecting", { host: session.host, port: session.port })}${RESET}`,
+        `${DIM}${i18n.t("terminal.connecting", { target: session.target })}${RESET}`,
       );
     }
-  }, [session.status, session.host, session.port]);
+  }, [session.status, session.target]);
 
   useEffect(() => {
     if (session.status !== SessionStatus.Connected) return;
     const term = termRef.current;
     if (!term) return;
-    void sshRepository.resize(session.id, term.cols, term.rows);
+    void terminalRepository.resize(session.id, term.cols, term.rows);
     if (activeRef.current) term.focus();
   }, [session.status, session.id]);
 

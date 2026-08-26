@@ -34,15 +34,15 @@ fn create_then_get_roundtrips_fields() {
     let conn = db();
     let created = create(&conn, &draft("prod", "example.com", 2222, "deploy")).unwrap();
 
-    assert_eq!(created.name, "prod");
+    assert_eq!(created.base.name, "prod");
     assert_eq!(created.host, "example.com");
     assert_eq!(created.port, 2222);
     assert_eq!(created.username, "deploy");
-    assert!(!created.is_favorite);
+    assert!(!created.base.is_favorite);
     assert_eq!(created.profile_id, None);
 
-    let fetched = get(&conn, &created.id).unwrap();
-    assert_eq!(fetched.id, created.id);
+    let fetched = get(&conn, &created.base.id).unwrap();
+    assert_eq!(fetched.base.id, created.base.id);
     assert_eq!(fetched.host, "example.com");
 }
 
@@ -53,7 +53,7 @@ fn list_is_ordered_by_name_case_insensitively() {
     create(&conn, &draft("Apple", "h2", 22, "u")).unwrap();
     create(&conn, &draft("cherry", "h3", 22, "u")).unwrap();
 
-    let names: Vec<String> = list(&conn).unwrap().into_iter().map(|c| c.name).collect();
+    let names: Vec<String> = list(&conn).unwrap().into_iter().map(|c| c.base.name).collect();
     assert_eq!(names, ["Apple", "banana", "cherry"]);
 }
 
@@ -82,32 +82,32 @@ fn update_changes_fields() {
     let conn = db();
     let created = create(&conn, &draft("old", "old.host", 22, "olduser")).unwrap();
 
-    let updated = update(&conn, &created.id, &draft("new", "new.host", 2200, "newuser")).unwrap();
-    assert_eq!(updated.id, created.id);
+    let updated = update(&conn, &created.base.id, &draft("new", "new.host", 2200, "newuser")).unwrap();
+    assert_eq!(updated.base.id, created.base.id);
     assert_eq!(updated.host, "new.host");
     assert_eq!(updated.port, 2200);
     assert_eq!(updated.username, "newuser");
-    assert_eq!(updated.name, "new");
+    assert_eq!(updated.base.name, "new");
 }
 
 #[test]
 fn set_favorite_toggles() {
     let conn = db();
     let created = create(&conn, &draft("c", "h", 22, "u")).unwrap();
-    assert!(!created.is_favorite);
+    assert!(!created.base.is_favorite);
 
-    assert!(set_favorite(&conn, &created.id, true).unwrap().is_favorite);
-    assert!(!set_favorite(&conn, &created.id, false).unwrap().is_favorite);
+    assert!(set_favorite(&conn, &created.base.id, true).unwrap().base.is_favorite);
+    assert!(!set_favorite(&conn, &created.base.id, false).unwrap().base.is_favorite);
 }
 
 #[test]
 fn delete_removes_row() {
     let conn = db();
     let created = create(&conn, &draft("c", "h", 22, "u")).unwrap();
-    delete(&conn, &created.id).unwrap();
+    delete(&conn, &created.base.id).unwrap();
 
     assert!(list(&conn).unwrap().is_empty());
-    assert!(get(&conn, &created.id).is_err());
+    assert!(get(&conn, &created.base.id).is_err());
 }
 
 #[test]
@@ -125,7 +125,7 @@ fn create_records_the_profile_link() {
     .unwrap();
 
     assert_eq!(created.profile_id, Some(profile_id.clone()));
-    assert_eq!(get(&conn, &created.id).unwrap().profile_id, Some(profile_id));
+    assert_eq!(get(&conn, &created.base.id).unwrap().profile_id, Some(profile_id));
 }
 
 #[test]
@@ -136,7 +136,7 @@ fn update_can_attach_and_detach_a_profile() {
 
     let attached = update(
         &conn,
-        &created.id,
+        &created.base.id,
         &ConnectionDraft {
             profile_id: Some(profile_id.clone()),
             ..draft("c", "h", 22, "deploy")
@@ -145,7 +145,7 @@ fn update_can_attach_and_detach_a_profile() {
     .unwrap();
     assert_eq!(attached.profile_id, Some(profile_id));
 
-    let detached = update(&conn, &created.id, &draft("c", "h", 22, "deploy")).unwrap();
+    let detached = update(&conn, &created.base.id, &draft("c", "h", 22, "deploy")).unwrap();
     assert_eq!(detached.profile_id, None);
 }
 
@@ -165,8 +165,8 @@ fn set_username_for_profile_only_touches_linked_rows() {
 
     set_username_for_profile(&conn, &profile_id, "admin").unwrap();
 
-    assert_eq!(get(&conn, &linked.id).unwrap().username, "admin");
-    assert_eq!(get(&conn, &standalone.id).unwrap().username, "root");
+    assert_eq!(get(&conn, &linked.base.id).unwrap().username, "admin");
+    assert_eq!(get(&conn, &standalone.base.id).unwrap().username, "root");
 }
 
 #[test]
@@ -205,7 +205,7 @@ fn clear_profile_detaches_without_deleting() {
 
     clear_profile(&conn, &profile_id).unwrap();
 
-    let detached = get(&conn, &linked.id).unwrap();
+    let detached = get(&conn, &linked.base.id).unwrap();
     assert_eq!(detached.profile_id, None);
     assert_eq!(detached.username, "root");
 }
@@ -225,5 +225,5 @@ fn deleting_a_profile_nulls_the_link_through_the_foreign_key() {
 
     crate::features::profiles::store::delete(&conn, &profile_id).unwrap();
 
-    assert_eq!(get(&conn, &linked.id).unwrap().profile_id, None);
+    assert_eq!(get(&conn, &linked.base.id).unwrap().profile_id, None);
 }

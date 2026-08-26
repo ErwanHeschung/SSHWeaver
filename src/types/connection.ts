@@ -14,3 +14,9 @@ export interface Connection {
   status: ConnectionStatus;
   isFavorite: boolean;
 }
+
+export const sshEndpoint = ({
+  username,
+  host,
+  port,
+}: Pick<Connection, "username" | "host" | "port">) => `${username}@${host}:${port}`;

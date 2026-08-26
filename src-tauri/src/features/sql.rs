@@ -32,5 +32,33 @@ pub fn db_error(err: rusqlite::Error, sentinels: &[&str]) -> String {
     "database error".to_string()
 }
 
+/// Stores an enum as its `as_str()` text and reads it back through `parse()`,
+/// so the SQL `CHECK (col IN (…))` lists and the Rust variants stay one
+/// vocabulary.
+macro_rules! sql_text_enum {
+    ($ty:ty) => {
+        impl rusqlite::ToSql for $ty {
+            fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+                Ok(rusqlite::types::ToSqlOutput::from(self.as_str()))
+            }
+        }
+
+        impl rusqlite::types::FromSql for $ty {
+            fn column_result(
+                value: rusqlite::types::ValueRef<'_>,
+            ) -> rusqlite::types::FromSqlResult<Self> {
+                let text = value.as_str()?;
+                Self::parse(text).ok_or_else(|| {
+                    rusqlite::types::FromSqlError::Other(
+                        format!("unknown {} value: {text}", stringify!($ty)).into(),
+                    )
+                })
+            }
+        }
+    };
+}
+
+pub(crate) use sql_text_enum;
+
 #[cfg(test)]
 mod tests;

@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { SessionStatus } from "@/types/session";
-import type { TerminalSession } from "@/types/session";
-import type { Connection } from "@/types/connection";
+import type { SessionKind, TerminalSession } from "@/types/session";
 
 function pickNeighbor(sessions: TerminalSession[], closingId: string): string | undefined {
   const index = sessions.findIndex((s) => s.id === closingId);
@@ -10,11 +9,18 @@ function pickNeighbor(sessions: TerminalSession[], closingId: string): string | 
   return next?.id;
 }
 
+export interface SessionRequest {
+  connectionId: string;
+  kind: SessionKind;
+  title: string;
+  target: string;
+}
+
 interface SessionState {
   sessions: TerminalSession[];
   activeId?: string;
 
-  open: (connection: Connection) => string;
+  open: (request: SessionRequest) => string;
   close: (id: string) => void;
   restart: (id: string) => void;
   setActive: (id: string) => void;
@@ -26,8 +32,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   sessions: [],
   activeId: undefined,
 
-  open: (connection) => {
-    const existing = get().sessions.find((s) => s.connectionId === connection.id);
+  open: (request) => {
+    const existing = get().sessions.find((s) => s.connectionId === request.connectionId);
     if (existing) {
       set({ activeId: existing.id });
       return existing.id;
@@ -35,12 +41,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
     const session: TerminalSession = {
       id: crypto.randomUUID(),
-      connectionId: connection.id,
-      title: connection.name,
-      username: connection.username,
-      host: connection.host,
-      port: connection.port,
       status: SessionStatus.Connecting,
+      ...request,
     };
 
     set((state) => ({

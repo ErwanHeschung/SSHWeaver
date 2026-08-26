@@ -18,10 +18,9 @@ use tokio::sync::{mpsc, oneshot};
 use zeroize::Zeroizing;
 
 use super::sftp::{SftpSessions, SftpSlot};
+use super::{HostKeyPrompt, HostKeyPrompts, PendingConnections};
 use crate::features::secrets::store::{self as secrets, Key};
-use super::{
-    Control, HostKeyPrompt, HostKeyPrompts, PendingConnections, SshClosed, SshOutput, SshSessions,
-};
+use crate::features::terminal::{self, Control, TerminalSessions};
 
 pub(super) type SessionHandle = Arc<Handle<ClientHandler>>;
 
@@ -225,9 +224,9 @@ fn secret_key(params: &ConnectParams) -> Key {
 
 pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<ConnectOutcome> {
     {
-        let sessions = app.state::<SshSessions>();
+        let sessions = app.state::<TerminalSessions>();
         let pending = app.state::<PendingConnections>();
-        if sessions.0.lock().contains_key(&params.session_id)
+        if sessions.contains(&params.session_id)
             || pending.0.lock().contains_key(&params.session_id)
         {
             anyhow::bail!("session id already in use");
@@ -579,11 +578,8 @@ async fn start_session(
     channel.request_shell(true).await?;
 
     let (tx, rx) = mpsc::unbounded_channel::<Control>();
-    app.state::<SshSessions>()
-        .0
-        .lock()
+    app.state::<TerminalSessions>()
         .insert(session_id.clone(), tx);
-
 
     app.state::<SftpSessions>()
         .0
@@ -604,8 +600,8 @@ async fn run(
     let message = loop {
         tokio::select! {
             msg = channel.wait() => match msg {
-                Some(ChannelMsg::Data { data }) => emit_output(&app, &session_id, &data),
-                Some(ChannelMsg::ExtendedData { data, .. }) => emit_output(&app, &session_id, &data),
+                Some(ChannelMsg::Data { data }) => terminal::emit_output(&app, &session_id, &data),
+                Some(ChannelMsg::ExtendedData { data, .. }) => terminal::emit_output(&app, &session_id, &data),
                 Some(ChannelMsg::Eof) | Some(ChannelMsg::Close) | None => break None,
                 _ => {}
             },
@@ -627,19 +623,8 @@ async fn run(
         .lock()
         .remove(&session_id);
     drop(handle);
-    app.state::<SshSessions>()
-        .0
-        .lock()
-        .remove(&session_id);
-    let _ = SshClosed { session_id, message }.emit(&app);
-}
-
-fn emit_output(app: &AppHandle, session_id: &str, data: &[u8]) {
-    let _ = SshOutput {
-        session_id: session_id.to_string(),
-        data: data.to_vec(),
-    }
-    .emit(app);
+    app.state::<TerminalSessions>().remove(&session_id);
+    terminal::emit_closed(&app, session_id, message);
 }
 
 #[cfg(test)]

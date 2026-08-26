@@ -27,7 +27,7 @@ fn connection(conn: &Connection, host: &str, username: &str, profile_id: Option<
         },
     )
     .unwrap()
-    .id
+    .base.id
 }
 
 #[test]

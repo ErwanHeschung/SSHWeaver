@@ -5,6 +5,7 @@ import { useOverlayScrollbars } from "overlayscrollbars-react";
 import { ConnectionStatus } from "@/types/connection";
 import type { Connection } from "@/types/connection";
 import { useConnectionStore } from "@stores/useConnectionStore";
+import { ListError, ListMessage } from "@components/Sidebar/ListMessage";
 import { ConnectionItem } from "./ConnectionItem";
 import { filterConnections } from "./search";
 
@@ -27,6 +28,9 @@ export function ConnectionList() {
   const { t } = useTranslation();
   const connections = useConnectionStore((s) => s.connections);
   const query = useConnectionStore((s) => s.query);
+  const loaded = useConnectionStore((s) => s.loaded);
+  const error = useConnectionStore((s) => s.error);
+  const reload = useConnectionStore((s) => s.load);
   const rootRef = useRef<HTMLDivElement>(null);
   const [scroller, setScroller] = useState<HTMLElement | null>(null);
 
@@ -58,13 +62,21 @@ export function ConnectionList() {
     getItemKey: (index) => sorted[index]!.id,
   });
 
+  // Rendered inside the scroll container, never instead of it: detaching the
+  // ref would leave OverlayScrollbars and the virtualizer uninitialised.
+  const placeholder = error ? (
+    <ListError message={error} onRetry={() => void reload()} />
+  ) : !loaded ? (
+    <ListMessage>{t("list.loading")}</ListMessage>
+  ) : sorted.length === 0 ? (
+    <ListMessage>
+      {connections.length === 0 ? t("connection.empty") : t("search.empty", { query })}
+    </ListMessage>
+  ) : null;
+
   return (
     <div ref={rootRef} className="h-full overflow-y-auto">
-      {sorted.length === 0 ? (
-        <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted">
-          {t("search.empty", { query })}
-        </div>
-      ) : (
+      {placeholder ?? (
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {virtualizer.getVirtualItems().map((virtualRow) => {
             const connection = sorted[virtualRow.index]!;

@@ -2,6 +2,7 @@ import { useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { Profile } from "@/types/profile";
+import { INPUT_CLASS } from "@components/Form/fieldStyles";
 import { useModalStore } from "@stores/useModalStore";
 import { useProfileStore } from "@stores/useProfileStore";
 import type { ProfileDraft } from "@stores/useProfileStore";
@@ -14,9 +15,6 @@ export interface ProfileFormProps {
 }
 
 const EMPTY_DRAFT: ProfileDraft = { name: "", username: "" };
-
-const INPUT_CLASS =
-  "h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground transition-colors placeholder:text-faint focus:border-accent focus:outline-none";
 
 export function ProfileFormModal({ mode, profile }: Readonly<ProfileFormProps>) {
   const { t } = useTranslation();

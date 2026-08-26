@@ -7,7 +7,8 @@
   },
   "sidebar": {
     "connections": "Connections",
-    "profiles": "Profiles"
+    "profiles": "Profiles",
+    "console": "Console"
   },
   "actions": {
     "label": "Actions",
@@ -20,7 +21,8 @@
   "connection": {
     "select": "Select {{name}}",
     "addFavorite": "Add favorite",
-    "removeFavorite": "Remove favorite"
+    "removeFavorite": "Remove favorite",
+    "empty": "No connections yet. Add one to get started."
   },
   "profiles": {
     "subtitle": "Shared username + password",
@@ -48,7 +50,7 @@
   "terminal": {
     "empty": "No active session",
     "emptyHint": "Connect to a server from the sidebar to open a terminal.",
-    "connecting": "Connecting to {{host}}:{{port}}…",
+    "connecting": "Connecting to {{target}}…",
     "connectFailed": "Connection failed: {{error}}",
     "sessionClosed": "Session closed.",
     "search": {
@@ -164,6 +166,28 @@
     "profileForgetPassword": {
       "title": "Forget profile password",
       "message": "Remove the password saved for “{{name}}” from the keystore? Every connection using this profile will ask for it again."
+    },
+    "console": {
+      "addTitle": "Add console connection",
+      "editTitle": "Edit console connection",
+      "nameOptional": "Name (optional)",
+      "port": "Serial port",
+      "portHint_one": "{{count}} port detected. Pick one, or type a port that is not plugged in yet.",
+      "portHint_other": "{{count}} ports detected. Pick one, or type a port that is not plugged in yet.",
+      "portHintEmpty": "No serial port detected. You can still type one in.",
+      "baudRate": "Baud rate",
+      "dataBits": "Data bits",
+      "parity": "Parity",
+      "stopBits": "Stop bits",
+      "flowControl": "Flow control",
+      "create": "Add",
+      "save": "Save",
+      "connectAfterCreate": "Connect right away",
+      "duplicate": "A console connection with these exact settings already exists."
+    },
+    "consoleDelete": {
+      "title": "Delete console connection",
+      "message": "Are you sure you want to delete “{{name}}”? This action cannot be undone."
     }
   },
   "settings": {
@@ -186,5 +210,36 @@
       "english": "English",
       "french": "Français"
     }
+  },
+  "console": {
+    "add": "Add console connection",
+    "empty": "No console connections yet. Add one to open a serial port.",
+    "search": {
+      "placeholder": "Search console connections…",
+      "label": "Search console connections",
+      "empty": "No console connections match “{{query}}”."
+    },
+    "parity": {
+      "none": "None",
+      "odd": "Odd",
+      "even": "Even"
+    },
+    "stopBits": {
+      "one": "1",
+      "two": "2"
+    },
+    "flowControl": {
+      "none": "None",
+      "hardware": "RTS/CTS",
+      "software": "XON/XOFF"
+    }
+  },
+  "list": {
+    "loading": "Loading…",
+    "error": "Could not load: {{error}}",
+    "retry": "Try again"
+  },
+  "form": {
+    "showOptions": "Show {{field}} options"
   }
 }
