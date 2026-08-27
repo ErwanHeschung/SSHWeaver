@@ -47,8 +47,11 @@ pub async fn open(app: AppHandle, params: ConsoleParams) -> Result<(), String> {
 }
 
 fn open_port(settings: &SerialSettings) -> Result<Box<dyn SerialPort>, String> {
-    serialport::new(settings.port_name.trim(), settings.baud_rate)
-        .data_bits(settings.data_bits()?)
+    let name = settings.port_name.trim();
+    let data_bits = settings.data_bits()?;
+    ensure_known_port(name)?;
+    serialport::new(name, settings.baud_rate)
+        .data_bits(data_bits)
         .parity(settings.parity())
         .stop_bits(settings.stop_bits())
         .flow_control(settings.flow_control())
@@ -56,7 +59,22 @@ fn open_port(settings: &SerialSettings) -> Result<Box<dyn SerialPort>, String> {
         .dtr_on_open(true)
         .timeout(READ_TIMEOUT)
         .open()
-        .map_err(|e| format!("could not open {}: {e}", settings.port_name.trim()))
+        .map_err(|e| format!("could not open {name}: {e}"))
+}
+
+// The port picker in the UI only ever offers what `available_ports` reports,
+// so a `port_name` outside that list didn't come from a normal connect — this
+// keeps `console_connect` from being usable to open an arbitrary OS path.
+fn ensure_known_port(name: &str) -> Result<(), String> {
+    let known = serialport::available_ports()
+        .map_err(|e| format!("could not list serial ports: {e}"))?
+        .into_iter()
+        .any(|p| p.port_name.eq_ignore_ascii_case(name));
+    if known {
+        Ok(())
+    } else {
+        Err(format!("{name} is not a serial port this machine currently exposes"))
+    }
 }
 
 pub fn disconnect(app: &AppHandle, session_id: &str) {

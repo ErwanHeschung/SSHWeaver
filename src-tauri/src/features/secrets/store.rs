@@ -1,4 +1,5 @@
 use keyring_core::{Entry, Error};
+use zeroize::Zeroizing;
 
 const SERVICE: &str = "SSHWeaver";
 
@@ -70,9 +71,9 @@ pub fn set(key: &Key, password: &str) -> keyring_core::Result<()> {
     entry(key)?.set_password(password)
 }
 
-pub fn get(key: &Key) -> keyring_core::Result<Option<String>> {
+pub fn get(key: &Key) -> keyring_core::Result<Option<Zeroizing<String>>> {
     match entry(key)?.get_password() {
-        Ok(password) => Ok(Some(password)),
+        Ok(password) => Ok(Some(Zeroizing::new(password))),
         Err(Error::NoEntry) => Ok(None),
         Err(err) => Err(err),
     }
