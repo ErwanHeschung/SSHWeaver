@@ -22,12 +22,18 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
 [![Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ErwanHeschung/SSHWeaver/badges/tests.json&logo=rust&logoColor=white)](https://github.com/ErwanHeschung/SSHWeaver/actions/workflows/ci.yml)
+[![Status: experimental](https://img.shields.io/badge/status-experimental-orange)](#readme-top)
 [![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-555)](#getting-started)
 [![Stars](https://img.shields.io/github/stars/ErwanHeschung/SSHWeaver?style=flat&logo=github)](https://github.com/ErwanHeschung/SSHWeaver/stargazers)
 [![Issues](https://img.shields.io/github/issues/ErwanHeschung/SSHWeaver)](https://github.com/ErwanHeschung/SSHWeaver/issues)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
+
+> [!WARNING]
+> **SSHWeaver is experimental.** It is under active development, with no
+> third-party security audit. Prefer a mature client for critical systems.
+> [Contributions](#contributing) are appreciated, on security, UX or anything else.
 
 ## Table of Contents
 
