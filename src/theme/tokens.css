@@ -189,6 +189,13 @@
   --os-handle-min-size: 24px;
 }
 
+.xterm .xterm-scrollable-element > .scrollbar.vertical > .slider {
+  border: 2px solid transparent;
+  border-inline-width: 4px;
+  border-radius: 9999px;
+  background-clip: content-box !important;
+}
+
 /* ----------------------------------------------------------------------------
    Component primitives — encode the spec for things used everywhere
    -------------------------------------------------------------------------- */

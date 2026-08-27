@@ -236,8 +236,8 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
   }, [searchOpen]);
 
   return (
-    <div className={`absolute inset-0 ${active ? "" : "invisible"}`}>
-      <div ref={containerRef} className="absolute inset-0 p-2" />
+    <div className={`absolute inset-0 p-2 ${active ? "" : "invisible"}`}>
+      <div ref={containerRef} className="h-full w-full" />
       {searchOpen && (
         <div className="absolute right-3 top-3 flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-1 shadow-md">
           <input

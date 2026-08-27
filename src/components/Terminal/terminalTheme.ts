@@ -11,6 +11,10 @@ export function readTerminalTheme(): ITheme {
     cursorAccent: v("--bg"),
     selectionBackground: v("--accent-subtle"),
 
+    scrollbarSliderBackground: `${v("--accent")}99`,
+    scrollbarSliderHoverBackground: v("--accent"),
+    scrollbarSliderActiveBackground: v("--accent-hover"),
+
     black: "#3b3b46",
     red: "#ef4444",
     green: "#22c55e",
