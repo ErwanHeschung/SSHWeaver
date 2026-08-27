@@ -18,10 +18,9 @@ use tokio::sync::{mpsc, oneshot};
 use zeroize::Zeroizing;
 
 use super::sftp::{SftpSessions, SftpSlot};
-use crate::features::secrets::store as secrets;
-use super::{
-    Control, HostKeyPrompt, HostKeyPrompts, PendingConnections, SshClosed, SshOutput, SshSessions,
-};
+use super::{HostKeyPrompt, HostKeyPrompts, PendingConnections};
+use crate::features::secrets::store::{self as secrets, Key};
+use crate::features::terminal::{self, Control, TerminalSessions};
 
 pub(super) type SessionHandle = Arc<Handle<ClientHandler>>;
 
@@ -33,6 +32,7 @@ pub struct ConnectParams {
     pub host: String,
     pub port: u16,
     pub username: String,
+    pub profile_id: Option<String>,
     pub cols: u32,
     pub rows: u32,
 }
@@ -56,7 +56,7 @@ const MAX_PASSWORD_ATTEMPTS: u32 = 3;
 
 pub struct Pending {
     handle: Handle<ClientHandler>,
-    connection_id: String,
+    secret: Key,
     username: String,
     cols: u32,
     rows: u32,
@@ -215,11 +215,18 @@ fn accepts(result: &AuthResult, method: MethodKind) -> bool {
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
 
+fn secret_key(params: &ConnectParams) -> Key {
+    match &params.profile_id {
+        Some(profile_id) => Key::profile(profile_id),
+        None => Key::connection(&params.connection_id),
+    }
+}
+
 pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<ConnectOutcome> {
     {
-        let sessions = app.state::<SshSessions>();
+        let sessions = app.state::<TerminalSessions>();
         let pending = app.state::<PendingConnections>();
-        if sessions.0.lock().contains_key(&params.session_id)
+        if sessions.contains(&params.session_id)
             || pending.0.lock().contains_key(&params.session_id)
         {
             anyhow::bail!("session id already in use");
@@ -293,7 +300,8 @@ pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<Conne
     }
 
     if accepts(&result, MethodKind::Password) {
-        if let Ok(Some(saved)) = secrets::get(&params.connection_id) {
+        let secret = secret_key(&params);
+        if let Ok(Some(saved)) = secrets::get(&secret) {
             let saved = Zeroizing::new(saved);
             let auth = handle
                 .authenticate_password(&params.username, saved.as_str())
@@ -309,13 +317,18 @@ pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<Conne
                 start_session(app, params.session_id, handle, params.cols, params.rows).await?;
                 return Ok(ConnectOutcome::Connected);
             }
-            let _ = secrets::delete(&params.connection_id);
+            // A shared profile password being refused by one server is not
+            // proof it is stale; leave it for the prompt to overwrite.
+            if secret.is_connection() {
+                let _ = secrets::delete(&secret);
+            }
             tracing::warn!(
                 target: "ssh::audit",
                 host = %params.host,
                 port = params.port,
                 user = %params.username,
-                "saved password rejected; removed from keystore"
+                shared = !secret.is_connection(),
+                "saved password rejected"
             );
         }
 
@@ -323,7 +336,7 @@ pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<Conne
             params.session_id,
             Pending {
                 handle,
-                connection_id: params.connection_id,
+                secret,
                 username: params.username,
                 cols: params.cols,
                 rows: params.rows,
@@ -372,7 +385,7 @@ pub async fn authenticate_password(
             "authenticated via password"
         );
         if remember {
-            if let Err(e) = secrets::set(&pending.connection_id, password.as_str()) {
+            if let Err(e) = secrets::set(&pending.secret, password.as_str()) {
                 tracing::warn!(
                     target: "ssh::audit",
                     user = %pending.username,
@@ -565,11 +578,8 @@ async fn start_session(
     channel.request_shell(true).await?;
 
     let (tx, rx) = mpsc::unbounded_channel::<Control>();
-    app.state::<SshSessions>()
-        .0
-        .lock()
+    app.state::<TerminalSessions>()
         .insert(session_id.clone(), tx);
-
 
     app.state::<SftpSessions>()
         .0
@@ -590,8 +600,8 @@ async fn run(
     let message = loop {
         tokio::select! {
             msg = channel.wait() => match msg {
-                Some(ChannelMsg::Data { data }) => emit_output(&app, &session_id, &data),
-                Some(ChannelMsg::ExtendedData { data, .. }) => emit_output(&app, &session_id, &data),
+                Some(ChannelMsg::Data { data }) => terminal::emit_output(&app, &session_id, &data),
+                Some(ChannelMsg::ExtendedData { data, .. }) => terminal::emit_output(&app, &session_id, &data),
                 Some(ChannelMsg::Eof) | Some(ChannelMsg::Close) | None => break None,
                 _ => {}
             },
@@ -613,19 +623,8 @@ async fn run(
         .lock()
         .remove(&session_id);
     drop(handle);
-    app.state::<SshSessions>()
-        .0
-        .lock()
-        .remove(&session_id);
-    let _ = SshClosed { session_id, message }.emit(&app);
-}
-
-fn emit_output(app: &AppHandle, session_id: &str, data: &[u8]) {
-    let _ = SshOutput {
-        session_id: session_id.to_string(),
-        data: data.to_vec(),
-    }
-    .emit(app);
+    app.state::<TerminalSessions>().remove(&session_id);
+    terminal::emit_closed(&app, session_id, message);
 }
 
 #[cfg(test)]

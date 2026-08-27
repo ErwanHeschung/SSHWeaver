@@ -26,7 +26,7 @@ pub fn run() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
-            app.manage(features::ssh::SshSessions::default());
+            app.manage(features::terminal::TerminalSessions::default());
             app.manage(features::ssh::PendingConnections::default());
             app.manage(features::ssh::HostKeyPrompts::default());
             app.manage(features::ssh::SftpSessions::default());

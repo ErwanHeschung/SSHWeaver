@@ -10,6 +10,14 @@ export interface Connection {
   host: string;
   port: number;
   username: string;
+  profileId: string | null;
   status: ConnectionStatus;
   isFavorite: boolean;
+  lastUsedAt: string | null;
 }
+
+export const sshEndpoint = ({
+  username,
+  host,
+  port,
+}: Pick<Connection, "username" | "host" | "port">) => `${username}@${host}:${port}`;

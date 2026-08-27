@@ -1,15 +1,15 @@
-export interface Option<T extends string> {
+export interface Option<T extends string | number> {
   value: T;
   label: string;
 }
 
-interface SettingOptionsProps<T extends string> {
+interface SettingOptionsProps<T extends string | number> {
   options: ReadonlyArray<Option<T>>;
   value: T;
   onChange: (value: T) => void;
 }
 
-export function SettingOptions<T extends string>({
+export function SettingOptions<T extends string | number>({
   options,
   value,
   onChange,

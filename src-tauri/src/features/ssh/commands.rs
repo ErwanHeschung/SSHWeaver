@@ -1,13 +1,8 @@
 use tauri::{AppHandle, State};
 
 use super::session::{self, ConnectOutcome, ConnectParams, PasswordOutcome};
-use super::{sftp, Control, HostKeyPrompts, PendingConnections, SftpEntry, SshSessions};
-
-fn send(state: &SshSessions, session_id: &str, control: Control) {
-    if let Some(tx) = state.0.lock().get(session_id) {
-        let _ = tx.send(control);
-    }
-}
+use super::{sftp, HostKeyPrompts, PendingConnections, SftpEntry};
+use crate::features::terminal::{Control, TerminalSessions};
 
 #[tauri::command]
 #[specta::specta]
@@ -34,18 +29,6 @@ pub fn ssh_host_key_decision(prompts: State<HostKeyPrompts>, session_id: String,
     if let Some(tx) = prompts.0.lock().remove(&session_id) {
         let _ = tx.send(accept);
     }
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn ssh_write(state: State<SshSessions>, session_id: String, data: String) {
-    send(&state, &session_id, Control::Data(data.into_bytes()));
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn ssh_resize(state: State<SshSessions>, session_id: String, cols: u32, rows: u32) {
-    send(&state, &session_id, Control::Resize { cols, rows });
 }
 
 #[tauri::command]
@@ -114,15 +97,17 @@ pub async fn sftp_remove(app: AppHandle, session_id: String, path: String) -> Re
         .map_err(|e| e.to_string())
 }
 
+/// Closing an SSH session also drops any half-finished authentication: the user
+/// may be cancelling from the password prompt, before a session ever existed.
 #[tauri::command]
 #[specta::specta]
 pub fn ssh_disconnect(
-    sessions: State<SshSessions>,
+    sessions: State<TerminalSessions>,
     pending: State<PendingConnections>,
     prompts: State<HostKeyPrompts>,
     session_id: String,
 ) {
-    send(&sessions, &session_id, Control::Close);
+    sessions.send(&session_id, Control::Close);
     pending.0.lock().remove(&session_id);
     prompts.0.lock().remove(&session_id);
 }

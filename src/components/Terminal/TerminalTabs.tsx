@@ -1,10 +1,11 @@
 import type { MouseEvent } from "react";
 import { FolderTree, TerminalSquare, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { SessionStatus } from "@/types/session";
+import { SessionKind, SessionStatus } from "@/types/session";
 import type { TerminalSession } from "@/types/session";
 import { useSessionStore } from "@stores/useSessionStore";
 import { useSftpStore } from "@stores/useSftpStore";
+import { useIsTruncated } from "@/hooks/useIsTruncated";
 import type { SftpViewMode } from "@stores/useSftpStore";
 
 const STATUS_DOT: Record<SessionStatus, string> = {
@@ -18,6 +19,8 @@ export function TerminalTabs() {
   const activeId = useSessionStore((s) => s.activeId);
   const setActive = useSessionStore((s) => s.setActive);
   const close = useSessionStore((s) => s.close);
+  // Only an SSH session has a file side; a serial line has nothing to browse.
+  const activeSession = sessions.find((s) => s.id === activeId);
 
   return (
     <div className="flex h-9 flex-none items-stretch border-b border-border bg-surface">
@@ -32,7 +35,9 @@ export function TerminalTabs() {
           />
         ))}
       </div>
-      {activeId && <ViewToggle sessionId={activeId} />}
+      {activeSession?.kind === SessionKind.Ssh && (
+        <ViewToggle sessionId={activeSession.id} />
+      )}
     </div>
   );
 }
@@ -79,6 +84,7 @@ interface TabProps {
 
 function Tab({ session, active, onSelect, onClose }: Readonly<TabProps>) {
   const { t } = useTranslation();
+  const [titleRef, titleClipped] = useIsTruncated<HTMLSpanElement>(session.title);
   const close = (e: MouseEvent) => {
     e.stopPropagation();
     onClose();
@@ -98,7 +104,13 @@ function Tab({ session, active, onSelect, onClose }: Readonly<TabProps>) {
       }`}
     >
       <span className={`status-dot ${STATUS_DOT[session.status]}`} aria-hidden />
-      <span className="min-w-0 flex-1 truncate">{session.title}</span>
+      <span
+        ref={titleRef}
+        title={titleClipped ? session.title : undefined}
+        className="min-w-0 flex-1 truncate"
+      >
+        {session.title}
+      </span>
       <button
         type="button"
         aria-label={t("tabs.closeNamed", { title: session.title })}

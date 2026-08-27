@@ -5,18 +5,38 @@
     "clear": "Clear search",
     "empty": "No connections match “{{query}}”."
   },
+  "sidebar": {
+    "connections": "Connections",
+    "profiles": "Profiles",
+    "console": "Console"
+  },
   "actions": {
     "label": "Actions",
     "connect": "Connect",
     "edit": "Edit",
     "delete": "Delete",
     "forgetPassword": "Forget saved password",
-    "add": "Add connection"
+    "add": "Add connection",
+    "setDefault": "Set as default",
+    "unsetDefault": "Remove as default"
   },
   "connection": {
     "select": "Select {{name}}",
     "addFavorite": "Add favorite",
-    "removeFavorite": "Remove favorite"
+    "removeFavorite": "Remove favorite",
+    "empty": "No connections yet. Add one to get started."
+  },
+  "profiles": {
+    "subtitle": "Shared username + password",
+    "add": "Add profile",
+    "edit": "Edit {{name}}",
+    "empty": "No profiles yet. Add one to share a username and password across connections.",
+    "passwordSaved": "Password saved",
+    "noPassword": "No password saved",
+    "unused": "unused",
+    "usedBy_one": "{{count}} connection",
+    "usedBy_other": "{{count}} connections",
+    "isDefault": "Default profile"
   },
   "theme": {
     "toLight": "Switch to light theme",
@@ -33,7 +53,7 @@
   "terminal": {
     "empty": "No active session",
     "emptyHint": "Connect to a server from the sidebar to open a terminal.",
-    "connecting": "Connecting to {{host}}:{{port}}…",
+    "connecting": "Connecting to {{target}}…",
     "connectFailed": "Connection failed: {{error}}",
     "sessionClosed": "Session closed.",
     "search": {
@@ -90,16 +110,22 @@
       "nameOptional": "Name (optional)",
       "host": "Host",
       "port": "Port",
+      "profile": "Credential profile",
+      "noProfile": "None (enter a username below)",
       "username": "Username",
+      "profileHint": "Connects as {{username}}, using the password saved for this profile.",
+      "profileNoPasswordHint": "Connects as {{username}}. No password is saved yet, so you'll be asked once and every connection on this profile will reuse it.",
       "create": "Add",
       "save": "Save",
       "connectAfterCreate": "Connect right away",
-      "duplicate": "A connection to this host, port and username already exists."
+      "duplicate": "A connection to this host, port and username already exists.",
+      "unknownProfile": "That credential profile no longer exists."
     },
     "password": {
       "title": "Connect to {{name}}",
       "label": "Password",
       "remember": "Remember password",
+      "rememberProfile": "Save as the password for “{{name}}”",
       "connect": "Connect",
       "authenticating": "Connecting…",
       "failed": "Authentication failed. Try again.",
@@ -118,6 +144,53 @@
       "hint": "It will be saved to ~/.ssh/known_hosts and trusted on future connections.",
       "accept": "Accept & connect",
       "reject": "Reject"
+    },
+    "profile": {
+      "addTitle": "Add credential profile",
+      "editTitle": "Edit credential profile",
+      "name": "Profile name",
+      "namePlaceholder": "production admin",
+      "username": "Username",
+      "usernameHint": "Changing this renames the account on every connection using this profile.",
+      "password": "Password",
+      "passwordHint": "Stored in your operating system's keystore, never in the app database. Leave empty to be asked at connection time.",
+      "passwordUnchanged": "•••••••• (unchanged)",
+      "create": "Add",
+      "save": "Save",
+      "duplicate": "A profile with this name already exists.",
+      "usernameCollision": "Another connection already uses that username on the same host and port."
+    },
+    "profileDelete": {
+      "title": "Delete credential profile",
+      "message": "Delete “{{name}}”? Its saved password is removed from the keystore. This cannot be undone.",
+      "messageInUse_one": "Delete “{{name}}”? {{count}} connection uses it: it keeps its username but loses the shared password, and you'll be asked for one on the next connection.",
+      "messageInUse_other": "Delete “{{name}}”? {{count}} connections use it: they keep their username but lose the shared password, and you'll be asked for one on the next connection."
+    },
+    "profileForgetPassword": {
+      "title": "Forget profile password",
+      "message": "Remove the password saved for “{{name}}” from the keystore? Every connection using this profile will ask for it again."
+    },
+    "console": {
+      "addTitle": "Add console connection",
+      "editTitle": "Edit console connection",
+      "nameOptional": "Name (optional)",
+      "port": "Serial port",
+      "portHint_one": "{{count}} port detected. Pick one, or type a port that is not plugged in yet.",
+      "portHint_other": "{{count}} ports detected. Pick one, or type a port that is not plugged in yet.",
+      "portHintEmpty": "No serial port detected. You can still type one in.",
+      "baudRate": "Baud rate",
+      "dataBits": "Data bits",
+      "parity": "Parity",
+      "stopBits": "Stop bits",
+      "flowControl": "Flow control",
+      "create": "Add",
+      "save": "Save",
+      "connectAfterCreate": "Connect right away",
+      "duplicate": "A console connection with these exact settings already exists."
+    },
+    "consoleDelete": {
+      "title": "Delete console connection",
+      "message": "Are you sure you want to delete “{{name}}”? This action cannot be undone."
     }
   },
   "settings": {
@@ -132,6 +205,22 @@
       "light": "Light",
       "dark": "Dark"
     },
+    "terminal": {
+      "nav": "Terminal",
+      "title": "Terminal",
+      "fontSizeLabel": "Font size",
+      "fontSizeHint": "Applies to every open terminal, SSH and serial alike.",
+      "fontSizeOption": "{{size}} px",
+      "rolesLabel": "Output colours",
+      "rolesHint": "What each kind of output looks like. Programs reach these through the standard ANSI slots, so the colour applies to any tool that reports an error or a success — SSHWeaver's own connection messages included.",
+      "rolesReset": "Reset to defaults",
+      "roles": {
+        "error": "Errors",
+        "success": "Success",
+        "warning": "Warnings",
+        "info": "Information"
+      }
+    },
     "language": {
       "nav": "Language",
       "title": "Language",
@@ -140,5 +229,44 @@
       "english": "English",
       "french": "Français"
     }
+  },
+  "console": {
+    "add": "Add console connection",
+    "empty": "No console connections yet. Add one to open a serial port.",
+    "search": {
+      "placeholder": "Search console connections…",
+      "label": "Search console connections",
+      "empty": "No console connections match “{{query}}”."
+    },
+    "parity": {
+      "none": "None",
+      "odd": "Odd",
+      "even": "Even"
+    },
+    "stopBits": {
+      "one": "1",
+      "two": "2"
+    },
+    "flowControl": {
+      "none": "None",
+      "hardware": "RTS/CTS",
+      "software": "XON/XOFF"
+    }
+  },
+  "list": {
+    "loading": "Loading…",
+    "error": "Could not load: {{error}}",
+    "retry": "Try again"
+  },
+  "form": {
+    "showOptions": "Show {{field}} options"
+  },
+  "time": {
+    "now": "now",
+    "minutes": "{{count}}m",
+    "hours": "{{count}}h",
+    "days": "{{count}}d",
+    "months": "{{count}}mo",
+    "years": "{{count}}y"
   }
 }

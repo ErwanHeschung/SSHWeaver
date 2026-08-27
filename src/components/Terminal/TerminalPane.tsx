@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { TerminalSquare } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { SessionKind } from "@/types/session";
 import type { TerminalSession } from "@/types/session";
 import { useSessionStore } from "@stores/useSessionStore";
 import { useSftpStore } from "@stores/useSftpStore";
@@ -53,7 +54,9 @@ function SessionViews({
   return (
     <>
       <TerminalView session={session} active={active && mode === "terminal"} />
-      <SftpView session={session} active={active && mode === "files"} />
+      {session.kind === SessionKind.Ssh && (
+        <SftpView session={session} active={active && mode === "files"} />
+      )}
     </>
   );
 }

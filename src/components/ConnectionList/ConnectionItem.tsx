@@ -5,6 +5,8 @@ import { ConnectionStatus } from "@/types/connection";
 import type { Connection } from "@/types/connection";
 import { useConnectionStore } from "@stores/useConnectionStore";
 import { useConnect } from "@/hooks/useConnect";
+import { useIsTruncated } from "@/hooks/useIsTruncated";
+import { formatLastUsed } from "@utils/lastUsed";
 import { ConnectionActions } from "./ConnectionActions";
 
 interface ConnectionItemProps {
@@ -29,6 +31,8 @@ const STATUS_STYLE: Record<ConnectionStatus, StatusStyle> = {
   },
 };
 
+const ENDPOINT_ONLY = "wrap-anywhere line-clamp-2";
+
 export function ConnectionItem({ connection, style }: Readonly<ConnectionItemProps>) {
   const { t } = useTranslation();
   const { id, name, host, port, username, status, isFavorite } = connection;
@@ -38,6 +42,15 @@ export function ConnectionItem({ connection, style }: Readonly<ConnectionItemPro
   const favoriteLabel = isFavorite
     ? t("connection.removeFavorite")
     : t("connection.addFavorite");
+
+  const [titleRef, titleClipped] = useIsTruncated<HTMLSpanElement>(title);
+  const [endpointRef, endpointClipped] = useIsTruncated<HTMLSpanElement>(endpoint);
+  const tooltip =
+    [titleClipped ? title : "", endpointClipped ? endpoint : ""]
+      .filter(Boolean)
+      .join("\n") || undefined;
+
+  const lastUsed = formatLastUsed(connection, t);
 
   const selected = useConnectionStore((s) => s.selectedId === id);
   const select = useConnectionStore((s) => s.select);
@@ -66,6 +79,7 @@ export function ConnectionItem({ connection, style }: Readonly<ConnectionItemPro
         type="button"
         aria-label={t("connection.select", { name: title })}
         aria-pressed={selected}
+        title={tooltip}
         onClick={() => select(id)}
         onDoubleClick={() => {
           select(id);
@@ -75,9 +89,16 @@ export function ConnectionItem({ connection, style }: Readonly<ConnectionItemPro
       />
 
       <span className="pointer-events-none relative min-w-0 flex-1">
-        <span className="block truncate text-foreground">{title}</span>
+        <span
+          ref={titleRef}
+          className={`text-foreground ${name.trim() ? "block truncate" : ENDPOINT_ONLY}`}
+        >
+          {title}
+        </span>
         {name.trim() && (
-          <span className="block truncate text-xs text-muted">{endpoint}</span>
+          <span ref={endpointRef} className="block truncate text-xs text-muted">
+            {endpoint}
+          </span>
         )}
       </span>
 
@@ -96,6 +117,10 @@ export function ConnectionItem({ connection, style }: Readonly<ConnectionItemPro
       <span className={`status-dot relative pointer-events-none ${statusStyle.dot}`} style={glow} aria-hidden />
 
       <ConnectionActions connection={connection} />
+
+      <span className="pointer-events-none absolute bottom-1 right-3 text-[10px] leading-none tabular-nums text-faint">
+        {lastUsed}
+      </span>
     </div>
   );
 }

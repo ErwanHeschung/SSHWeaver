@@ -1,8 +1,10 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Connection } from "@/types/connection";
+import { INPUT_CLASS } from "@components/Form/fieldStyles";
 import { useModalStore } from "@stores/useModalStore";
 import { useConnectionStore } from "@stores/useConnectionStore";
+import { useProfileStore } from "@stores/useProfileStore";
 import { Modal } from "./Modal";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "./buttonStyles";
 
@@ -10,9 +12,6 @@ export interface ConnectionPasswordProps {
   connection: Connection;
   sessionId: string;
 }
-
-const INPUT_CLASS =
-  "h-8 w-full rounded-md border border-border bg-background px-2.5 text-sm text-foreground transition-colors placeholder:text-faint focus:border-accent focus:outline-none";
 
 export function ConnectionPasswordModal({
   connection,
@@ -22,6 +21,14 @@ export function ConnectionPasswordModal({
   const close = useModalStore((s) => s.close);
   const authenticatePassword = useConnectionStore((s) => s.authenticatePassword);
   const abort = useConnectionStore((s) => s.abort);
+  const profile = useProfileStore((s) =>
+    s.profiles.find((p) => p.id === connection.profileId),
+  );
+
+  // Names the profile the saved password belongs to; the list may not be loaded.
+  useEffect(() => {
+    if (connection.profileId) void useProfileStore.getState().ensureLoaded();
+  }, [connection.profileId]);
 
   const formId = useId();
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -131,7 +138,9 @@ export function ConnectionPasswordModal({
             disabled={lockedOut}
             className="h-3.5 w-3.5 rounded border-border accent-accent"
           />
-          {t("modal.password.remember")}
+          {profile
+            ? t("modal.password.rememberProfile", { name: profile.name })
+            : t("modal.password.remember")}
         </label>
         {lockedOut ? (
           <p className="text-xs text-danger">
