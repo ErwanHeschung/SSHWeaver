@@ -1,10 +1,5 @@
 use super::*;
 
-const ED25519_A: &str =
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJdD7y3aLq454yWBdwLWbieU1ebz9/cu7/QEXn9OIeZJ";
-const ED25519_B: &str =
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILIG2T/B0l0gaqj3puu510tu9N1OkQ4znY3LYuEm5zCF";
-
 fn scratch_dir() -> PathBuf {
     let dir = std::env::temp_dir().join(format!("sshweaver-test-{}", uuid::Uuid::new_v4()));
     std::fs::create_dir_all(&dir).unwrap();
@@ -41,13 +36,22 @@ fn atomic_write_creates_missing_file() {
 }
 
 #[test]
-fn line_carries_key_matches_only_the_recorded_key() {
-    let key = ssh_key::PublicKey::from_openssh(ED25519_A).unwrap();
-    let keys = [key];
+fn drop_lines_removes_only_the_given_line_numbers() {
+    let contents = "one\ntwo\nthree\nfour\n";
 
-    assert!(line_carries_key(&format!("example.com {ED25519_A}"), &keys));
-    assert!(!line_carries_key(&format!("# example.com {ED25519_A}"), &keys));
-    assert!(!line_carries_key("   ", &keys));
-    assert!(!line_carries_key(&format!("example.com {ED25519_B}"), &keys));
-    assert!(!line_carries_key("example.com ssh-ed25519", &keys));
+    assert_eq!(drop_lines(contents, &[2]), "one\nthree\nfour\n");
+}
+
+#[test]
+fn drop_lines_with_no_stale_lines_is_unchanged_but_for_trailing_newline() {
+    let contents = "one\ntwo\n";
+
+    assert_eq!(drop_lines(contents, &[]), "one\ntwo\n");
+}
+
+#[test]
+fn drop_lines_can_remove_several_lines_in_any_order() {
+    let contents = "one\ntwo\nthree\nfour\n";
+
+    assert_eq!(drop_lines(contents, &[3, 1]), "two\nfour\n");
 }

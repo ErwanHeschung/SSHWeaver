@@ -10,6 +10,8 @@ pub fn run() {
         .with_max_level(tracing::Level::INFO)
         .try_init();
 
+    features::secrets::store::init();
+
     let builder = ipc::builder();
 
     #[cfg(debug_assertions)]

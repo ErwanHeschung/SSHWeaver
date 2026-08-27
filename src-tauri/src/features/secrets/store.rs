@@ -1,6 +1,37 @@
-use keyring::{Entry, Error};
+use keyring_core::{Entry, Error};
+use zeroize::Zeroizing;
 
 const SERVICE: &str = "SSHWeaver";
+
+/// Picks the platform credential store and makes it `keyring_core`'s default,
+/// once, at startup.
+pub fn init() {
+    if let Err(e) = try_init() {
+        tracing::warn!(
+            target: "ssh::audit",
+            error = %e,
+            "no platform credential store available; saved passwords will be unavailable"
+        );
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn try_init() -> keyring_core::Result<()> {
+    keyring_core::set_default_store(windows_native_keyring_store::Store::new()?);
+    Ok(())
+}
+
+#[cfg(target_os = "macos")]
+fn try_init() -> keyring_core::Result<()> {
+    keyring_core::set_default_store(apple_native_keyring_store::keychain::Store::new()?);
+    Ok(())
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
+fn try_init() -> keyring_core::Result<()> {
+    keyring_core::set_default_store(dbus_secret_service_keyring_store::Store::new()?);
+    Ok(())
+}
 
 // Connections keep the bare connection id as their entry name — that is how
 // they were first written, and renaming would orphan existing passwords.
@@ -32,23 +63,23 @@ impl Key {
     }
 }
 
-fn entry(key: &Key) -> keyring::Result<Entry> {
+fn entry(key: &Key) -> keyring_core::Result<Entry> {
     Entry::new(SERVICE, &key.entry_name())
 }
 
-pub fn set(key: &Key, password: &str) -> keyring::Result<()> {
+pub fn set(key: &Key, password: &str) -> keyring_core::Result<()> {
     entry(key)?.set_password(password)
 }
 
-pub fn get(key: &Key) -> keyring::Result<Option<String>> {
+pub fn get(key: &Key) -> keyring_core::Result<Option<Zeroizing<String>>> {
     match entry(key)?.get_password() {
-        Ok(password) => Ok(Some(password)),
+        Ok(password) => Ok(Some(Zeroizing::new(password))),
         Err(Error::NoEntry) => Ok(None),
         Err(err) => Err(err),
     }
 }
 
-pub fn delete(key: &Key) -> keyring::Result<()> {
+pub fn delete(key: &Key) -> keyring_core::Result<()> {
     match entry(key)?.delete_credential() {
         Ok(()) | Err(Error::NoEntry) => Ok(()),
         Err(err) => Err(err),

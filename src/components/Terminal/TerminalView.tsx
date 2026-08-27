@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
-import { ClipboardAddon } from "@xterm/addon-clipboard";
+import { ClipboardAddon, type IClipboardProvider } from "@xterm/addon-clipboard";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { WebglAddon } from "@xterm/addon-webgl";
@@ -26,6 +26,11 @@ interface TerminalViewProps {
 const DIM = "\x1b[90m";
 const RED = "\x1b[31m";
 const RESET = "\x1b[0m";
+
+const clipboardProvider: IClipboardProvider = {
+  readText: () => "",
+  writeText: () => {},
+};
 
 export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
   const { t } = useTranslation();
@@ -70,7 +75,7 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
     const fit = new FitAddon();
     fitRef.current = fit;
     term.loadAddon(fit);
-    term.loadAddon(new ClipboardAddon());
+    term.loadAddon(new ClipboardAddon(undefined, clipboardProvider));
     term.loadAddon(new WebLinksAddon((_event, uri) => void openUrl(uri)));
     const search = new SearchAddon();
     term.loadAddon(search);

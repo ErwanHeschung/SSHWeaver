@@ -6,7 +6,9 @@ use parking_lot::Mutex;
 use russh::client::{self, AuthResult, Handle};
 use russh::keys::agent::client::AgentClient;
 use russh::keys::known_hosts::{check_known_hosts, known_host_keys, learn_known_hosts};
-use russh::keys::{load_secret_key, ssh_key, HashAlg, PrivateKey, PrivateKeyWithHashAlg};
+use russh::keys::{
+    load_secret_key, ssh_key, HashAlg, PrivateKey, PrivateKeyWithHashAlg, PublicKeyOrCertificate,
+};
 use russh::{Channel, ChannelMsg, MethodKind};
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -120,15 +122,16 @@ impl ClientHandler {
             %fingerprint,
             "changed host key accepted by user; updating known_hosts"
         );
-        let stale: Vec<ssh_key::PublicKey> = known_host_keys(&self.host, self.port)
+        let stale_lines: Vec<usize> = known_host_keys(&self.host, self.port)
             .unwrap_or_default()
             .into_iter()
-            .map(|(_, key)| key)
-            .filter(|key| {
+            .filter(|(_, key)| {
                 key.algorithm() == server_public_key.algorithm() && key != server_public_key
             })
+            .map(|(line, _)| line)
             .collect();
-        if let Err(e) = replace_known_host(&self.host, self.port, server_public_key, &stale) {
+        if let Err(e) = replace_known_host(&self.host, self.port, server_public_key, &stale_lines)
+        {
             tracing::error!(
                 target: "ssh::audit",
                 host = %self.host,
@@ -150,11 +153,38 @@ impl client::Handler for ClientHandler {
 
     async fn check_server_key(
         &mut self,
-        server_public_key: &ssh_key::PublicKey,
+        server_public_key: &PublicKeyOrCertificate,
     ) -> Result<bool, Self::Error> {
+        // Host certificates aren't supported yet (no CA trust store, no UI for
+        // it): fail closed rather than silently falling back to some partial
+        // check.
+        let server_public_key = match server_public_key {
+            PublicKeyOrCertificate::PublicKey { key, .. } => key,
+            PublicKeyOrCertificate::Certificate(_) => {
+                tracing::warn!(
+                    target: "ssh::audit",
+                    host = %self.host,
+                    port = self.port,
+                    "server offered a host certificate; certificates are not supported, rejecting"
+                );
+                self.reject(format!(
+                    "{}:{} offered a host certificate, which is not supported yet",
+                    self.host, self.port
+                ));
+                return Ok(false);
+            }
+        };
+
         match check_known_hosts(&self.host, self.port, server_public_key) {
             Ok(true) => return Ok(true),
-            Ok(false) => {}
+            Ok(false) => {
+                let known = !known_host_keys(&self.host, self.port)
+                    .unwrap_or_default()
+                    .is_empty();
+                if known {
+                    return self.handle_changed_host_key(server_public_key).await;
+                }
+            }
             Err(russh::keys::Error::KeyChanged { .. }) => {
                 return self.handle_changed_host_key(server_public_key).await;
             }
@@ -215,6 +245,27 @@ fn accepts(result: &AuthResult, method: MethodKind) -> bool {
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
 
+fn host_key_algorithms() -> Vec<ssh_key::Algorithm> {
+    vec![
+        ssh_key::Algorithm::Ed25519,
+        ssh_key::Algorithm::Ecdsa {
+            curve: ssh_key::EcdsaCurve::NistP256,
+        },
+        ssh_key::Algorithm::Ecdsa {
+            curve: ssh_key::EcdsaCurve::NistP384,
+        },
+        ssh_key::Algorithm::Ecdsa {
+            curve: ssh_key::EcdsaCurve::NistP521,
+        },
+        ssh_key::Algorithm::Rsa {
+            hash: Some(HashAlg::Sha512),
+        },
+        ssh_key::Algorithm::Rsa {
+            hash: Some(HashAlg::Sha256),
+        },
+    ]
+}
+
 fn secret_key(params: &ConnectParams) -> Key {
     match &params.profile_id {
         Some(profile_id) => Key::profile(profile_id),
@@ -237,6 +288,10 @@ pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<Conne
         inactivity_timeout: Some(Duration::from_secs(3600)),
         keepalive_interval: Some(Duration::from_secs(30)),
         keepalive_max: 3,
+        preferred: russh::Preferred {
+            key: std::borrow::Cow::Owned(host_key_algorithms()),
+            ..Default::default()
+        },
         ..Default::default()
     });
 
@@ -302,7 +357,6 @@ pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<Conne
     if accepts(&result, MethodKind::Password) {
         let secret = secret_key(&params);
         if let Ok(Some(saved)) = secrets::get(&secret) {
-            let saved = Zeroizing::new(saved);
             let auth = handle
                 .authenticate_password(&params.username, saved.as_str())
                 .await?;
@@ -512,23 +566,29 @@ fn replace_known_host(
     host: &str,
     port: u16,
     new_key: &ssh_key::PublicKey,
-    stale: &[ssh_key::PublicKey],
+    stale_lines: &[usize],
 ) -> std::io::Result<()> {
-    if !stale.is_empty() {
+    if !stale_lines.is_empty() {
         let path = home_dir()
             .map(|home| home.join(".ssh").join("known_hosts"))
             .ok_or_else(|| std::io::Error::other("no home directory"))?;
         if let Ok(contents) = std::fs::read_to_string(&path) {
-            let mut kept: Vec<&str> = contents
-                .lines()
-                .filter(|line| !line_carries_key(line, stale))
-                .collect();
-            kept.push("");
-            atomic_write(&path, &kept.join("\n"))?;
+            atomic_write(&path, &drop_lines(&contents, stale_lines))?;
         }
     }
 
     learn_known_hosts(host, port, new_key).map_err(std::io::Error::other)
+}
+
+fn drop_lines(contents: &str, stale_lines: &[usize]) -> String {
+    let mut kept: Vec<&str> = contents
+        .lines()
+        .enumerate()
+        .filter(|(i, _)| !stale_lines.contains(&(i + 1)))
+        .map(|(_, line)| line)
+        .collect();
+    kept.push("");
+    kept.join("\n")
 }
 
 fn atomic_write(path: &Path, contents: &str) -> std::io::Result<()> {
@@ -545,22 +605,6 @@ fn atomic_write(path: &Path, contents: &str) -> std::io::Result<()> {
         return Err(e);
     }
     Ok(())
-}
-
-fn line_carries_key(line: &str, keys: &[ssh_key::PublicKey]) -> bool {
-    let trimmed = line.trim_start();
-    if trimmed.is_empty() || trimmed.starts_with('#') {
-        return false;
-    }
-    let mut fields = trimmed.split_whitespace();
-    let _hosts = fields.next();
-    let (Some(algo), Some(b64)) = (fields.next(), fields.next()) else {
-        return false;
-    };
-    match ssh_key::PublicKey::from_openssh(&format!("{algo} {b64}")) {
-        Ok(parsed) => keys.iter().any(|k| *k == parsed),
-        Err(_) => false,
-    }
 }
 
 async fn start_session(
