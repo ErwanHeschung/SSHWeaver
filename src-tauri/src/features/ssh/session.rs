@@ -6,7 +6,9 @@ use parking_lot::Mutex;
 use russh::client::{self, AuthResult, Handle};
 use russh::keys::agent::client::AgentClient;
 use russh::keys::known_hosts::{check_known_hosts, known_host_keys, learn_known_hosts};
-use russh::keys::{load_secret_key, ssh_key, HashAlg, PrivateKey, PrivateKeyWithHashAlg};
+use russh::keys::{
+    load_secret_key, ssh_key, HashAlg, PrivateKey, PrivateKeyWithHashAlg, PublicKeyOrCertificate,
+};
 use russh::{Channel, ChannelMsg, MethodKind};
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -150,8 +152,28 @@ impl client::Handler for ClientHandler {
 
     async fn check_server_key(
         &mut self,
-        server_public_key: &ssh_key::PublicKey,
+        server_public_key: &PublicKeyOrCertificate,
     ) -> Result<bool, Self::Error> {
+        // Host certificates aren't supported yet (no CA trust store, no UI for
+        // it): fail closed rather than silently falling back to some partial
+        // check.
+        let server_public_key = match server_public_key {
+            PublicKeyOrCertificate::PublicKey { key, .. } => key,
+            PublicKeyOrCertificate::Certificate(_) => {
+                tracing::warn!(
+                    target: "ssh::audit",
+                    host = %self.host,
+                    port = self.port,
+                    "server offered a host certificate; certificates are not supported, rejecting"
+                );
+                self.reject(format!(
+                    "{}:{} offered a host certificate, which is not supported yet",
+                    self.host, self.port
+                ));
+                return Ok(false);
+            }
+        };
+
         match check_known_hosts(&self.host, self.port, server_public_key) {
             Ok(true) => return Ok(true),
             Ok(false) => {}

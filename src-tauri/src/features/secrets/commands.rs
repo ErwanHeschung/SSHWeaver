@@ -2,7 +2,7 @@ use super::store::{self, Key};
 
 type CmdResult<T> = Result<T, String>;
 
-fn keystore_error(err: keyring::Error, action: &str) -> String {
+fn keystore_error(err: keyring_core::Error, action: &str) -> String {
     tracing::error!(target: "ssh::audit", error = %err, "failed to {action}");
     "keystore error".to_string()
 }
