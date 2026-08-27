@@ -210,7 +210,16 @@
       "title": "Terminal",
       "fontSizeLabel": "Taille de police",
       "fontSizeHint": "S’applique à tous les terminaux ouverts, SSH comme série.",
-      "fontSizeOption": "{{size}} px"
+      "fontSizeOption": "{{size}} px",
+      "rolesLabel": "Couleurs de sortie",
+      "rolesHint": "L’aspect de chaque type de sortie. Les programmes y accèdent via les emplacements ANSI standard, donc la couleur s’applique à tout outil qui signale une erreur ou un succès — y compris les messages de connexion de SSHWeaver.",
+      "rolesReset": "Rétablir les valeurs par défaut",
+      "roles": {
+        "error": "Erreurs",
+        "success": "Succès",
+        "warning": "Avertissements",
+        "info": "Information"
+      }
     },
     "language": {
       "nav": "Langue",

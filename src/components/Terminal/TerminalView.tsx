@@ -30,6 +30,7 @@ const RESET = "\x1b[0m";
 export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
   const { t } = useTranslation();
   const fontSize = useTerminalSettingsStore((s) => s.fontSize);
+  const roleColors = useTerminalSettingsStore((s) => s.roleColors);
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -239,6 +240,12 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
     term.options.fontSize = fontSize;
     fitRef.current?.fit();
   }, [fontSize]);
+
+  useEffect(() => {
+    const term = termRef.current;
+    if (!term) return;
+    term.options.theme = readTerminalTheme();
+  }, [roleColors]);
 
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.select();

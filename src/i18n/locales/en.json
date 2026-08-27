@@ -210,7 +210,16 @@
       "title": "Terminal",
       "fontSizeLabel": "Font size",
       "fontSizeHint": "Applies to every open terminal, SSH and serial alike.",
-      "fontSizeOption": "{{size}} px"
+      "fontSizeOption": "{{size}} px",
+      "rolesLabel": "Output colours",
+      "rolesHint": "What each kind of output looks like. Programs reach these through the standard ANSI slots, so the colour applies to any tool that reports an error or a success — SSHWeaver's own connection messages included.",
+      "rolesReset": "Reset to defaults",
+      "roles": {
+        "error": "Errors",
+        "success": "Success",
+        "warning": "Warnings",
+        "info": "Information"
+      }
     },
     "language": {
       "nav": "Language",

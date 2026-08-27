@@ -189,6 +189,15 @@
   --os-handle-min-size: 24px;
 }
 
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
 .xterm .xterm-scrollable-element > .scrollbar.vertical > .slider {
   border: 2px solid transparent;
   border-inline-width: 4px;

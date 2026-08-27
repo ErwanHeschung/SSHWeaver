@@ -5,6 +5,7 @@ import { SessionKind, SessionStatus } from "@/types/session";
 import type { TerminalSession } from "@/types/session";
 import { useSessionStore } from "@stores/useSessionStore";
 import { useSftpStore } from "@stores/useSftpStore";
+import { useIsTruncated } from "@/hooks/useIsTruncated";
 import type { SftpViewMode } from "@stores/useSftpStore";
 
 const STATUS_DOT: Record<SessionStatus, string> = {
@@ -83,6 +84,7 @@ interface TabProps {
 
 function Tab({ session, active, onSelect, onClose }: Readonly<TabProps>) {
   const { t } = useTranslation();
+  const [titleRef, titleClipped] = useIsTruncated<HTMLSpanElement>(session.title);
   const close = (e: MouseEvent) => {
     e.stopPropagation();
     onClose();
@@ -102,7 +104,13 @@ function Tab({ session, active, onSelect, onClose }: Readonly<TabProps>) {
       }`}
     >
       <span className={`status-dot ${STATUS_DOT[session.status]}`} aria-hidden />
-      <span className="min-w-0 flex-1 truncate">{session.title}</span>
+      <span
+        ref={titleRef}
+        title={titleClipped ? session.title : undefined}
+        className="min-w-0 flex-1 truncate"
+      >
+        {session.title}
+      </span>
       <button
         type="button"
         aria-label={t("tabs.closeNamed", { title: session.title })}
