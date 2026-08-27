@@ -67,6 +67,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - name: Generate tests badge
         run: |
           mkdir -p badge
