@@ -13,6 +13,7 @@ import { ConnectionStatus } from "@/types/connection";
 import { SessionStatus } from "@/types/session";
 import type { TerminalSession } from "@/types/session";
 import { useSessionStore } from "@stores/useSessionStore";
+import { useTerminalSettingsStore } from "@stores/useTerminalSettingsStore";
 import { setConnectionStatus } from "@stores/connectionStatus";
 import { terminalRepository } from "@repositories/terminalRepository";
 import { readTerminalTheme } from "./terminalTheme";
@@ -28,6 +29,7 @@ const RESET = "\x1b[0m";
 
 export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
   const { t } = useTranslation();
+  const fontSize = useTerminalSettingsStore((s) => s.fontSize);
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -59,7 +61,7 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
       fontFamily:
         getComputedStyle(document.documentElement).getPropertyValue("--font-mono") ||
         "monospace",
-      fontSize: 13,
+      fontSize: useTerminalSettingsStore.getState().fontSize,
       cursorBlink: true,
       theme: readTerminalTheme(),
     });
@@ -230,6 +232,13 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
     const id = requestAnimationFrame(() => fitRef.current?.fit());
     return () => cancelAnimationFrame(id);
   }, [active]);
+
+  useEffect(() => {
+    const term = termRef.current;
+    if (!term) return;
+    term.options.fontSize = fontSize;
+    fitRef.current?.fit();
+  }, [fontSize]);
 
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.select();

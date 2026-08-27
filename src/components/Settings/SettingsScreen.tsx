@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { AppearanceSection } from "./AppearanceSection";
 import { LanguageSection } from "./LanguageSection";
+import { TerminalSection } from "./TerminalSection";
 
 export function SettingsScreen() {
   const { t } = useTranslation();
@@ -39,6 +40,9 @@ export function SettingsScreen() {
         <div className="divide-y divide-border">
           <div className="pb-8">
             <AppearanceSection />
+          </div>
+          <div className="py-8">
+            <TerminalSection />
           </div>
           <div className="pt-8">
             <LanguageSection />

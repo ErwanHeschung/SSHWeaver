@@ -205,6 +205,13 @@
       "light": "Light",
       "dark": "Dark"
     },
+    "terminal": {
+      "nav": "Terminal",
+      "title": "Terminal",
+      "fontSizeLabel": "Font size",
+      "fontSizeHint": "Applies to every open terminal, SSH and serial alike.",
+      "fontSizeOption": "{{size}} px"
+    },
     "language": {
       "nav": "Language",
       "title": "Language",

@@ -205,6 +205,13 @@
       "light": "Clair",
       "dark": "Sombre"
     },
+    "terminal": {
+      "nav": "Terminal",
+      "title": "Terminal",
+      "fontSizeLabel": "Taille de police",
+      "fontSizeHint": "S’applique à tous les terminaux ouverts, SSH comme série.",
+      "fontSizeOption": "{{size}} px"
+    },
     "language": {
       "nav": "Langue",
       "title": "Langue",
