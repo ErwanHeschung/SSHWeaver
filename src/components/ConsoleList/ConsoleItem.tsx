@@ -6,6 +6,7 @@ import type { ConsoleConnection } from "@/types/console";
 import { describeSerial } from "@/types/serial";
 import { consoleTitle } from "@/types/console";
 import { useConsoleStore } from "@stores/useConsoleStore";
+import { formatLastUsed } from "@utils/lastUsed";
 import { useConnectConsole } from "@hooks/useConnect";
 import { ConsoleActions } from "./ConsoleActions";
 
@@ -40,6 +41,8 @@ export function ConsoleItem({ connection, style }: Readonly<ConsoleItemProps>) {
   const favoriteLabel = isFavorite
     ? t("connection.removeFavorite")
     : t("connection.addFavorite");
+
+  const lastUsed = formatLastUsed(connection, t);
 
   const selected = useConsoleStore((s) => s.selectedId === id);
   const select = useConsoleStore((s) => s.select);
@@ -100,6 +103,10 @@ export function ConsoleItem({ connection, style }: Readonly<ConsoleItemProps>) {
       />
 
       <ConsoleActions connection={connection} />
+
+      <span className="pointer-events-none absolute bottom-1 right-3 text-[10px] leading-none tabular-nums text-faint">
+        {lastUsed}
+      </span>
     </div>
   );
 }

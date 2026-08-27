@@ -6,6 +6,7 @@ import type { Connection } from "@/types/connection";
 import { useConnectionStore } from "@stores/useConnectionStore";
 import { useConnect } from "@/hooks/useConnect";
 import { useIsTruncated } from "@/hooks/useIsTruncated";
+import { formatLastUsed } from "@utils/lastUsed";
 import { ConnectionActions } from "./ConnectionActions";
 
 interface ConnectionItemProps {
@@ -48,6 +49,8 @@ export function ConnectionItem({ connection, style }: Readonly<ConnectionItemPro
     [titleClipped ? title : "", endpointClipped ? endpoint : ""]
       .filter(Boolean)
       .join("\n") || undefined;
+
+  const lastUsed = formatLastUsed(connection, t);
 
   const selected = useConnectionStore((s) => s.selectedId === id);
   const select = useConnectionStore((s) => s.select);
@@ -114,6 +117,10 @@ export function ConnectionItem({ connection, style }: Readonly<ConnectionItemPro
       <span className={`status-dot relative pointer-events-none ${statusStyle.dot}`} style={glow} aria-hidden />
 
       <ConnectionActions connection={connection} />
+
+      <span className="pointer-events-none absolute bottom-1 right-3 text-[10px] leading-none tabular-nums text-faint">
+        {lastUsed}
+      </span>
     </div>
   );
 }

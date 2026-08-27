@@ -84,6 +84,13 @@ pub fn connection_set_favorite(
 
 #[tauri::command]
 #[specta::specta]
+pub fn connection_mark_used(db: State<Db>, id: String) -> CmdResult<StoredConnection> {
+    let conn = sql::lock(&db)?;
+    store::mark_used(&conn, &id).map_err(db_error)
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn connection_delete(db: State<Db>, id: String) -> CmdResult<()> {
     let conn = sql::lock(&db)?;
     store::delete(&conn, &id).map_err(db_error)?;

@@ -9,11 +9,13 @@ export const commands = {
 	connectionCreate: (draft: ConnectionDraft) => typedError<StoredConnection, string>(__TAURI_INVOKE("connection_create", { draft })),
 	connectionUpdate: (id: string, draft: ConnectionDraft) => typedError<StoredConnection, string>(__TAURI_INVOKE("connection_update", { id, draft })),
 	connectionSetFavorite: (id: string, isFavorite: boolean) => typedError<StoredConnection, string>(__TAURI_INVOKE("connection_set_favorite", { id, isFavorite })),
+	connectionMarkUsed: (id: string) => typedError<StoredConnection, string>(__TAURI_INVOKE("connection_mark_used", { id })),
 	connectionDelete: (id: string) => typedError<null, string>(__TAURI_INVOKE("connection_delete", { id })),
 	consoleConnectionsList: () => typedError<StoredConsoleConnection[], string>(__TAURI_INVOKE("console_connections_list")),
 	consoleConnectionCreate: (draft: ConsoleConnectionDraft) => typedError<StoredConsoleConnection, string>(__TAURI_INVOKE("console_connection_create", { draft })),
 	consoleConnectionUpdate: (id: string, draft: ConsoleConnectionDraft) => typedError<StoredConsoleConnection, string>(__TAURI_INVOKE("console_connection_update", { id, draft })),
 	consoleConnectionSetFavorite: (id: string, isFavorite: boolean) => typedError<StoredConsoleConnection, string>(__TAURI_INVOKE("console_connection_set_favorite", { id, isFavorite })),
+	consoleConnectionMarkUsed: (id: string) => typedError<StoredConsoleConnection, string>(__TAURI_INVOKE("console_connection_mark_used", { id })),
 	consoleConnectionDelete: (id: string) => typedError<null, string>(__TAURI_INVOKE("console_connection_delete", { id })),
 	profilesList: () => typedError<Profile[], string>(__TAURI_INVOKE("profiles_list")),
 	profileCreate: (draft: ProfileDraft, password: string | null) => typedError<Profile, string>(__TAURI_INVOKE("profile_create", { draft, password })),
@@ -80,6 +82,7 @@ export type ConnectionBase = {
 	id: string,
 	name: string,
 	isFavorite: boolean,
+	lastUsedAt: string | null,
 };
 
 export type ConnectionDraft = {

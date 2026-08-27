@@ -17,12 +17,14 @@ pub fn builder() -> Builder<tauri::Wry> {
             connections::connection_create,
             connections::connection_update,
             connections::connection_set_favorite,
+            connections::connection_mark_used,
             connections::connection_delete,
             // --- console connections ---
             console::console_connections_list,
             console::console_connection_create,
             console::console_connection_update,
             console::console_connection_set_favorite,
+            console::console_connection_mark_used,
             console::console_connection_delete,
             // --- profiles ---
             profiles::profiles_list,

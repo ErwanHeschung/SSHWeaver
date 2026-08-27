@@ -7,6 +7,7 @@ export interface ConsoleConnection {
   settings: SerialSettings;
   status: ConnectionStatus;
   isFavorite: boolean;
+  lastUsedAt: string | null;
 }
 
 export type ConsoleConnectionDraft = Pick<ConsoleConnection, "name" | "settings">;

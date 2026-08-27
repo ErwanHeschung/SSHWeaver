@@ -5,6 +5,7 @@ import { useOverlayScrollbars } from "overlayscrollbars-react";
 import { ConnectionStatus } from "@/types/connection";
 import type { ConsoleConnection } from "@/types/console";
 import { useConsoleStore } from "@stores/useConsoleStore";
+import { compareLastUsed } from "@utils/lastUsed";
 import { ListError, ListMessage } from "@components/Sidebar/ListMessage";
 import { ConsoleItem } from "./ConsoleItem";
 import { filterConsoleConnections } from "./search";
@@ -21,7 +22,9 @@ const STATUS_RANK: Record<ConnectionStatus, number> = {
 function compareConnections(a: ConsoleConnection, b: ConsoleConnection): number {
   const byStatus = STATUS_RANK[a.status] - STATUS_RANK[b.status];
   if (byStatus !== 0) return byStatus;
-  return Number(b.isFavorite) - Number(a.isFavorite);
+  const byFavorite = Number(b.isFavorite) - Number(a.isFavorite);
+  if (byFavorite !== 0) return byFavorite;
+  return compareLastUsed(a, b);
 }
 
 export function ConsoleList() {

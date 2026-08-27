@@ -22,6 +22,9 @@ export const consoleRepository = {
   setFavorite: async (id: string, isFavorite: boolean) =>
     toConnection(await unwrap(commands.consoleConnectionSetFavorite(id, isFavorite))),
 
+  markUsed: async (id: string) =>
+    toConnection(await unwrap(commands.consoleConnectionMarkUsed(id))),
+
   remove: (id: string) => unwrap(commands.consoleConnectionDelete(id)),
 
   listPorts: () => unwrap(commands.consoleListPorts()),

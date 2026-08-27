@@ -260,5 +260,13 @@
   },
   "form": {
     "showOptions": "Show {{field}} options"
+  },
+  "time": {
+    "now": "now",
+    "minutes": "{{count}}m",
+    "hours": "{{count}}h",
+    "days": "{{count}}d",
+    "months": "{{count}}mo",
+    "years": "{{count}}y"
   }
 }

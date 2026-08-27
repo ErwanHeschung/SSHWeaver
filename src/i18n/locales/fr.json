@@ -260,5 +260,13 @@
   },
   "form": {
     "showOptions": "Afficher les options : {{field}}"
+  },
+  "time": {
+    "now": "<1min",
+    "minutes": "{{count}}min",
+    "hours": "{{count}}h",
+    "days": "{{count}}j",
+    "months": "{{count}}mo",
+    "years": "{{count}}a"
   }
 }

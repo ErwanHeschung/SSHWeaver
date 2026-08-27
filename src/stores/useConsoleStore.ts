@@ -48,6 +48,19 @@ export const useConsoleStore = create<ConsoleState>((set, get) => {
     isLoaded: () => get().loaded,
   });
 
+  // Failing to stamp a usage must not sink a session that opened fine.
+  const markUsed = (id: string) =>
+    void consoleRepository
+      .markUsed(id)
+      .then((stored) =>
+        set((state) => ({
+          connections: state.connections.map((c) =>
+            c.id === id ? { ...c, lastUsedAt: stored.lastUsedAt } : c,
+          ),
+        })),
+      )
+      .catch(() => {});
+
   return {
     connections: [],
     selectedId: undefined,
@@ -108,6 +121,7 @@ export const useConsoleStore = create<ConsoleState>((set, get) => {
         await consoleRepository.connect({ sessionId, settings: connection.settings });
         useSessionStore.getState().markConnected(sessionId);
         get().setStatus(connection.id, ConnectionStatus.Connected);
+        markUsed(connection.id);
         return { outcome: "connected", sessionId };
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err);

@@ -66,6 +66,19 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
     isLoaded: () => get().loaded,
   });
 
+  // Failing to stamp a usage must not sink a session that opened fine.
+  const markUsed = (id: string) =>
+    void connectionRepository
+      .markUsed(id)
+      .then((stored) =>
+        set((state) => ({
+          connections: state.connections.map((c) =>
+            c.id === id ? { ...c, lastUsedAt: stored.lastUsedAt } : c,
+          ),
+        })),
+      )
+      .catch(() => {});
+
   return {
     connections: [],
     selectedId: undefined,
@@ -159,6 +172,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
         if (outcome === "connected") {
           useSessionStore.getState().markConnected(sessionId);
           get().setStatus(connection.id, ConnectionStatus.Connected);
+          markUsed(connection.id);
           return { outcome: "connected", sessionId };
         }
         return { outcome: "passwordRequired", sessionId };
@@ -180,6 +194,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
         if (outcome === "authenticated") {
           useSessionStore.getState().markConnected(sessionId);
           get().setStatus(connection.id, ConnectionStatus.Connected);
+          markUsed(connection.id);
           return { status: "authenticated" };
         }
         if (outcome === "lockedOut") {

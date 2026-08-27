@@ -23,5 +23,8 @@ export const connectionRepository = {
   setFavorite: async (id: string, isFavorite: boolean) =>
     toConnection(await unwrap(commands.connectionSetFavorite(id, isFavorite))),
 
+  markUsed: async (id: string) =>
+    toConnection(await unwrap(commands.connectionMarkUsed(id))),
+
   remove: (id: string) => unwrap(commands.connectionDelete(id)),
 };

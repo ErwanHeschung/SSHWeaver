@@ -118,6 +118,11 @@ pub fn set_favorite(
     get(conn, id)
 }
 
+pub fn mark_used(conn: &Connection, id: &str) -> rusqlite::Result<StoredConnection> {
+    base::touch(conn, TABLE, id)?;
+    get(conn, id)
+}
+
 pub fn delete(conn: &Connection, id: &str) -> rusqlite::Result<()> {
     base::delete(conn, TABLE, id)
 }

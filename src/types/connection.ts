@@ -13,6 +13,7 @@ export interface Connection {
   profileId: string | null;
   status: ConnectionStatus;
   isFavorite: boolean;
+  lastUsedAt: string | null;
 }
 
 export const sshEndpoint = ({

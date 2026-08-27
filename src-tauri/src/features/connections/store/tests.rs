@@ -101,6 +101,22 @@ fn set_favorite_toggles() {
 }
 
 #[test]
+fn mark_used_stamps_an_iso_utc_instant() {
+    let conn = db();
+    let created = create(&conn, &draft("c", "h", 22, "u")).unwrap();
+    assert!(created.base.last_used_at.is_none());
+
+    let used = mark_used(&conn, &created.base.id).unwrap();
+    let stamp = used.base.last_used_at.unwrap();
+
+    // The frontend reads this with `new Date(...)`, which only agrees with the
+    // stored instant when it is ISO-8601 with an explicit zone.
+    assert_eq!(stamp.len(), 20, "{stamp}");
+    assert!(stamp.contains('T'), "{stamp}");
+    assert!(stamp.ends_with('Z'), "{stamp}");
+}
+
+#[test]
 fn delete_removes_row() {
     let conn = db();
     let created = create(&conn, &draft("c", "h", 22, "u")).unwrap();

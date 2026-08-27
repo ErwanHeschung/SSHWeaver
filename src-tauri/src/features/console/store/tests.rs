@@ -187,6 +187,19 @@ fn set_favorite_toggles() {
 }
 
 #[test]
+fn mark_used_stamps_the_row() {
+    let conn = db();
+    let created = create(&conn, &draft("c", "COM1")).unwrap();
+    assert!(created.base.last_used_at.is_none());
+
+    assert!(mark_used(&conn, &created.base.id)
+        .unwrap()
+        .base
+        .last_used_at
+        .is_some());
+}
+
+#[test]
 fn delete_removes_row() {
     let conn = db();
     let created = create(&conn, &draft("c", "COM1")).unwrap();
