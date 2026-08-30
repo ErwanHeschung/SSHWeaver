@@ -30,6 +30,7 @@ export const commands = {
 	sshConnect: (params: ConnectParams) => typedError<ConnectOutcome, string>(__TAURI_INVOKE("ssh_connect", { params })),
 	sshAuthenticatePassword: (sessionId: string, password: string, remember: boolean) => typedError<PasswordOutcome, string>(__TAURI_INVOKE("ssh_authenticate_password", { sessionId, password, remember })),
 	sshHostKeyDecision: (sessionId: string, accept: boolean) => __TAURI_INVOKE<void>("ssh_host_key_decision", { sessionId, accept }),
+	sshKeyPassphrase: (sessionId: string, passphrase: string | null, remember: boolean) => __TAURI_INVOKE<void>("ssh_key_passphrase", { sessionId, passphrase, remember }),
 	/**
 	 *  Closing an SSH session also drops any half-finished authentication: the user
 	 *  may be cancelling from the password prompt, before a session ever existed.
@@ -49,6 +50,7 @@ export const commands = {
 /** Events */
 export const events = {
 	hostKeyPrompt: makeEvent<HostKeyPrompt>("host-key-prompt"),
+	keyPassphrasePrompt: makeEvent<KeyPassphrasePrompt>("key-passphrase-prompt"),
 	terminalClosed: makeEvent<TerminalClosed>("terminal-closed"),
 	terminalOutput: makeEvent<TerminalOutput>("terminal-output"),
 };
@@ -70,6 +72,7 @@ export type ConnectParams = {
 	port: number,
 	username: string,
 	profileId: string | null,
+	allowLegacyAlgorithms: boolean,
 	cols: number,
 	rows: number,
 };
@@ -91,6 +94,7 @@ export type ConnectionDraft = {
 	port: number,
 	username: string,
 	profileId: string | null,
+	allowLegacyAlgorithms: boolean,
 };
 
 export type ConsoleConnectionDraft = {
@@ -111,6 +115,12 @@ export type HostKeyPrompt = {
 	port: number,
 	fingerprint: string,
 	changed: boolean,
+};
+
+export type KeyPassphrasePrompt = {
+	sessionId: string,
+	path: string,
+	retry: boolean,
 };
 
 export type Parity = "none" | "odd" | "even";
@@ -164,6 +174,7 @@ export type StoredConnection = {
 	port: number,
 	username: string,
 	profileId: string | null,
+	allowLegacyAlgorithms: boolean,
 } & ConnectionBase;
 
 export type StoredConsoleConnection = {

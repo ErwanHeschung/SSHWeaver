@@ -16,6 +16,7 @@ pub struct StoredConnection {
     pub port: u16,
     pub username: String,
     pub profile_id: Option<String>,
+    pub allow_legacy_algorithms: bool,
 }
 
 #[derive(Debug, Deserialize, Type)]
@@ -26,6 +27,7 @@ pub struct ConnectionDraft {
     pub port: u16,
     pub username: String,
     pub profile_id: Option<String>,
+    pub allow_legacy_algorithms: bool,
 }
 
 pub const DUPLICATE_ENDPOINT: &str = "DUPLICATE_ENDPOINT";
@@ -41,11 +43,15 @@ fn map_row(row: &Row) -> rusqlite::Result<StoredConnection> {
         port: row.get("port")?,
         username: row.get("username")?,
         profile_id: row.get("profile_id")?,
+        allow_legacy_algorithms: row.get("allow_legacy_algorithms")?,
     })
 }
 
 fn select_columns() -> String {
-    format!("{}, host, port, username, profile_id", base::COLUMNS)
+    format!(
+        "{}, host, port, username, profile_id, allow_legacy_algorithms",
+        base::COLUMNS
+    )
 }
 
 pub fn get(conn: &Connection, id: &str) -> rusqlite::Result<StoredConnection> {
@@ -71,15 +77,17 @@ pub fn list(conn: &Connection) -> rusqlite::Result<Vec<StoredConnection>> {
 pub fn create(conn: &Connection, draft: &ConnectionDraft) -> rusqlite::Result<StoredConnection> {
     let id = base::new_id();
     conn.execute(
-        "INSERT INTO connections (id, name, host, port, username, profile_id)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        "INSERT INTO connections
+             (id, name, host, port, username, profile_id, allow_legacy_algorithms)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         params![
             id,
             draft.name,
             draft.host,
             draft.port,
             draft.username,
-            draft.profile_id
+            draft.profile_id,
+            draft.allow_legacy_algorithms
         ],
     )
     .map_err(map_write_error)?;
@@ -94,7 +102,7 @@ pub fn update(
     conn.execute(
         "UPDATE connections
          SET name = ?2, host = ?3, port = ?4, username = ?5, profile_id = ?6,
-             updated_at = datetime('now')
+             allow_legacy_algorithms = ?7, updated_at = datetime('now')
          WHERE id = ?1",
         params![
             id,
@@ -102,7 +110,8 @@ pub fn update(
             draft.host,
             draft.port,
             draft.username,
-            draft.profile_id
+            draft.profile_id,
+            draft.allow_legacy_algorithms
         ],
     )
     .map_err(map_write_error)?;

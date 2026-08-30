@@ -24,6 +24,8 @@ export function TerminalSection() {
   const roleColors = useTerminalSettingsStore((s) => s.roleColors);
   const setRoleColor = useTerminalSettingsStore((s) => s.setRoleColor);
   const resetRoleColors = useTerminalSettingsStore((s) => s.resetRoleColors);
+  const highlight = useTerminalSettingsStore((s) => s.highlight);
+  const setHighlight = useTerminalSettingsStore((s) => s.setHighlight);
 
   const sizeOptions = TERMINAL_FONT_SIZES.map((size) => ({
     value: size,
@@ -31,6 +33,11 @@ export function TerminalSection() {
   }));
 
   const customised = TERMINAL_ROLES.some((role) => roleColors[role]);
+
+  const highlightOptions = [
+    { value: "on" as const, label: t("settings.terminal.highlightOn") },
+    { value: "off" as const, label: t("settings.terminal.highlightOff") },
+  ];
 
   return (
     <section>
@@ -77,6 +84,19 @@ export function TerminalSection() {
               {t("settings.terminal.rolesReset")}
             </button>
           )}
+        </SettingField>
+      </div>
+
+      <div className="pt-8">
+        <SettingField
+          label={t("settings.terminal.highlightLabel")}
+          hint={t("settings.terminal.highlightHint")}
+        >
+          <SettingOptions
+            options={highlightOptions}
+            value={highlight ? "on" : "off"}
+            onChange={(value) => setHighlight(value === "on")}
+          />
         </SettingField>
       </div>
     </section>

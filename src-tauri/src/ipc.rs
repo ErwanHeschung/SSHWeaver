@@ -5,7 +5,7 @@ use crate::features::console::commands as console;
 use crate::features::profiles::commands as profiles;
 use crate::features::secrets::commands as secrets;
 use crate::features::ssh::commands as ssh;
-use crate::features::ssh::HostKeyPrompt;
+use crate::features::ssh::{HostKeyPrompt, KeyPassphrasePrompt};
 use crate::features::terminal::commands as terminal;
 use crate::features::terminal::{TerminalClosed, TerminalOutput};
 
@@ -43,6 +43,7 @@ pub fn builder() -> Builder<tauri::Wry> {
             ssh::ssh_connect,
             ssh::ssh_authenticate_password,
             ssh::ssh_host_key_decision,
+            ssh::ssh_key_passphrase,
             ssh::ssh_disconnect,
             // --- console sessions ---
             console::console_list_ports,
@@ -59,6 +60,9 @@ pub fn builder() -> Builder<tauri::Wry> {
         .events(collect_events![
             TerminalOutput,
             TerminalClosed,
-            HostKeyPrompt
+            HostKeyPrompt,
+            KeyPassphrasePrompt
         ])
 }
+
+

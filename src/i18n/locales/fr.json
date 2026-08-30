@@ -61,6 +61,11 @@
       "previous": "Résultat précédent (Maj+Entrée)",
       "next": "Résultat suivant (Entrée)",
       "close": "Fermer (Échap)"
+    },
+    "menu": {
+      "copy": "Copier",
+      "cut": "Couper",
+      "paste": "Coller"
     }
   },
   "sftp": {
@@ -115,6 +120,8 @@
       "username": "Nom d’utilisateur",
       "profileHint": "Se connecte en tant que {{username}}, avec le mot de passe enregistré pour ce profil.",
       "profileNoPasswordHint": "Se connecte en tant que {{username}}. Aucun mot de passe n’est encore enregistré : il sera demandé une fois, puis réutilisé par toutes les connexions de ce profil.",
+      "allowLegacy": "Autoriser les algorithmes hérités",
+      "allowLegacyHint": "Réservé au matériel réseau ancien qui n’offre rien de mieux : échange de clés SHA-1, clés d’hôte ssh-rsa et ssh-dss, chiffrements CBC. Ils sont faibles, laissez décoché sauf si la connexion échoue sans.",
       "create": "Ajouter",
       "save": "Enregistrer",
       "connectAfterCreate": "Se connecter directement",
@@ -144,6 +151,16 @@
       "hint": "Elle sera enregistrée dans ~/.ssh/known_hosts et approuvée lors des prochaines connexions.",
       "accept": "Accepter et se connecter",
       "reject": "Refuser"
+    },
+    "keyPassphrase": {
+      "title": "Déverrouiller la clé SSH",
+      "message": "Cette clé est protégée par une phrase secrète. Saisissez-la pour vous authentifier avec.",
+      "label": "Phrase secrète",
+      "remember": "Mémoriser cette phrase secrète",
+      "failed": "Phrase secrète incorrecte. Réessayez.",
+      "hint": "Conservée dans le trousseau de votre système d’exploitation, jamais dans la base de l’application.",
+      "unlock": "Déverrouiller",
+      "skip": "Ignorer cette clé"
     },
     "profile": {
       "addTitle": "Ajouter un profil d’identifiants",
@@ -219,7 +236,11 @@
         "success": "Succès",
         "warning": "Avertissements",
         "info": "Information"
-      }
+      },
+      "highlightLabel": "Colorisation de la sortie",
+      "highlightHint": "Recolore les adresses IP et MAC ainsi que les mots d’état (up, down, failed…) dans la sortie, avec les couleurs ci-dessus. Désactivée dans les programmes plein écran comme vim ou top.",
+      "highlightOn": "Activée",
+      "highlightOff": "Désactivée"
     },
     "language": {
       "nav": "Langue",

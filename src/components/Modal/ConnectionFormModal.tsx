@@ -23,6 +23,7 @@ const EMPTY_DRAFT: ConnectionDraft = {
   port: 22,
   username: "",
   profileId: null,
+  allowLegacyAlgorithms: false,
 };
 
 const NO_PROFILE = "";
@@ -51,6 +52,7 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
           port: connection.port,
           username: connection.username,
           profileId: connection.profileId,
+          allowLegacyAlgorithms: connection.allowLegacyAlgorithms,
         }
       : EMPTY_DRAFT,
   );
@@ -118,6 +120,7 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
       username: username.trim(),
       port: draft.port,
       profileId: draft.profileId,
+      allowLegacyAlgorithms: draft.allowLegacyAlgorithms,
     };
     try {
       if (mode === "edit" && connection) {
@@ -239,6 +242,23 @@ export function ConnectionFormModal({ mode, connection }: Readonly<ConnectionFor
             />
           </Field>
         )}
+
+        <label className="flex items-start gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            checked={draft.allowLegacyAlgorithms}
+            onChange={(e) =>
+              setDraft((d) => ({ ...d, allowLegacyAlgorithms: e.target.checked }))
+            }
+            className="mt-0.5 size-4 rounded border-border accent-accent"
+          />
+          <span>
+            {t("modal.connection.allowLegacy")}
+            <span className="block text-xs text-muted">
+              {t("modal.connection.allowLegacyHint")}
+            </span>
+          </span>
+        </label>
 
         {mode === "add" && (
           <label className="flex items-center gap-2 text-sm text-foreground">

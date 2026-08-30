@@ -12,7 +12,7 @@ import type { LoadState } from "./loadable";
 
 export type ConnectionDraft = Pick<
   Connection,
-  "name" | "host" | "port" | "username" | "profileId"
+  "name" | "host" | "port" | "username" | "profileId" | "allowLegacyAlgorithms"
 >;
 
 const withStatus = (
@@ -166,6 +166,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
           port: connection.port,
           username: connection.username,
           profileId: connection.profileId,
+          allowLegacyAlgorithms: connection.allowLegacyAlgorithms,
           cols: 80,
           rows: 24,
         });

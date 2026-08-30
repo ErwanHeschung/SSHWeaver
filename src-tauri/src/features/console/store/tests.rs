@@ -222,6 +222,7 @@ fn console_and_ssh_connections_are_stored_independently() {
             port: 22,
             username: "root".into(),
             profile_id: None,
+            allow_legacy_algorithms: false,
         },
     )
     .unwrap();

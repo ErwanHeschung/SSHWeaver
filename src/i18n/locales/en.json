@@ -61,6 +61,11 @@
       "previous": "Previous match (Shift+Enter)",
       "next": "Next match (Enter)",
       "close": "Close (Esc)"
+    },
+    "menu": {
+      "copy": "Copy",
+      "cut": "Cut",
+      "paste": "Paste"
     }
   },
   "sftp": {
@@ -115,6 +120,8 @@
       "username": "Username",
       "profileHint": "Connects as {{username}}, using the password saved for this profile.",
       "profileNoPasswordHint": "Connects as {{username}}. No password is saved yet, so you'll be asked once and every connection on this profile will reuse it.",
+      "allowLegacy": "Allow legacy algorithms",
+      "allowLegacyHint": "Only for old network gear that offers nothing better: SHA-1 key exchange, ssh-rsa and ssh-dss host keys, CBC ciphers. These are weak, so leave this off unless the connection fails without it.",
       "create": "Add",
       "save": "Save",
       "connectAfterCreate": "Connect right away",
@@ -144,6 +151,16 @@
       "hint": "It will be saved to ~/.ssh/known_hosts and trusted on future connections.",
       "accept": "Accept & connect",
       "reject": "Reject"
+    },
+    "keyPassphrase": {
+      "title": "Unlock SSH key",
+      "message": "This key is protected by a passphrase. Enter it to authenticate with it.",
+      "label": "Passphrase",
+      "remember": "Remember this passphrase",
+      "failed": "Wrong passphrase. Try again.",
+      "hint": "Kept in your operating system keychain, never in the app database.",
+      "unlock": "Unlock",
+      "skip": "Skip this key"
     },
     "profile": {
       "addTitle": "Add credential profile",
@@ -219,7 +236,11 @@
         "success": "Success",
         "warning": "Warnings",
         "info": "Information"
-      }
+      },
+      "highlightLabel": "Highlight output",
+      "highlightHint": "Recolours IP and MAC addresses and status words (up, down, failed…) in the output, using the colours above. Off inside full-screen programs such as vim or top.",
+      "highlightOn": "On",
+      "highlightOff": "Off"
     },
     "language": {
       "nav": "Language",

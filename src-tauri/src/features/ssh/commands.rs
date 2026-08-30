@@ -1,7 +1,7 @@
 use tauri::{AppHandle, State};
 
 use super::session::{self, ConnectOutcome, ConnectParams, PasswordOutcome};
-use super::{sftp, HostKeyPrompts, PendingConnections, SftpEntry};
+use super::{sftp, HostKeyPrompts, KeyPassphrasePrompts, PendingConnections, SftpEntry};
 use crate::features::terminal::{Control, TerminalSessions};
 
 #[tauri::command]
@@ -28,6 +28,19 @@ pub async fn ssh_authenticate_password(
 pub fn ssh_host_key_decision(prompts: State<HostKeyPrompts>, session_id: String, accept: bool) {
     if let Some(tx) = prompts.0.lock().remove(&session_id) {
         let _ = tx.send(accept);
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn ssh_key_passphrase(
+    prompts: State<KeyPassphrasePrompts>,
+    session_id: String,
+    passphrase: Option<String>,
+    remember: bool,
+) {
+    if let Some(tx) = prompts.0.lock().remove(&session_id) {
+        let _ = tx.send(passphrase.map(|value| (value, remember)));
     }
 }
 
@@ -105,9 +118,11 @@ pub fn ssh_disconnect(
     sessions: State<TerminalSessions>,
     pending: State<PendingConnections>,
     prompts: State<HostKeyPrompts>,
+    passphrases: State<KeyPassphrasePrompts>,
     session_id: String,
 ) {
     sessions.send(&session_id, Control::Close);
     pending.0.lock().remove(&session_id);
     prompts.0.lock().remove(&session_id);
+    passphrases.0.lock().remove(&session_id);
 }

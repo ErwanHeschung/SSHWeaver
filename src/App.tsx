@@ -3,9 +3,11 @@ import { Route, Routes } from "react-router-dom";
 import { AppLayout } from "@layouts/AppLayout";
 import { SettingsScreen } from "@components/Settings/SettingsScreen";
 import { useHostKeyPrompts } from "@hooks/useHostKeyPrompts";
+import { useKeyPassphrasePrompts } from "@hooks/useKeyPassphrasePrompts";
 
 function App() {
   useHostKeyPrompts();
+  useKeyPassphrasePrompts();
 
   return (
     <Routes>

@@ -31,6 +31,7 @@ pub fn run() {
             app.manage(features::terminal::TerminalSessions::default());
             app.manage(features::ssh::PendingConnections::default());
             app.manage(features::ssh::HostKeyPrompts::default());
+            app.manage(features::ssh::KeyPassphrasePrompts::default());
             app.manage(features::ssh::SftpSessions::default());
             let db = db::init(app.handle())?;
             app.manage(db);

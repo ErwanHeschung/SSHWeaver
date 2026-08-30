@@ -1,5 +1,9 @@
 import { commands, events } from "@/bindings";
-import type { ConnectParams, HostKeyPrompt } from "@/bindings";
+import type {
+  ConnectParams,
+  HostKeyPrompt,
+  KeyPassphrasePrompt,
+} from "@/bindings";
 import type { EventCallback } from "@tauri-apps/api/event";
 import { unwrap } from "./result";
 
@@ -16,4 +20,10 @@ export const sshRepository = {
 
   onHostKeyPrompt: (cb: EventCallback<HostKeyPrompt>) =>
     events.hostKeyPrompt.listen(cb),
+
+  keyPassphrase: (sessionId: string, passphrase: string | null, remember: boolean) =>
+    commands.sshKeyPassphrase(sessionId, passphrase, remember),
+
+  onKeyPassphrasePrompt: (cb: EventCallback<KeyPassphrasePrompt>) =>
+    events.keyPassphrasePrompt.listen(cb),
 };

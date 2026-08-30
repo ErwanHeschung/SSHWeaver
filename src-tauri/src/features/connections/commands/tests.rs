@@ -17,6 +17,7 @@ fn draft() -> ConnectionDraft {
         port: 22,
         username: "root".into(),
         profile_id: None,
+        allow_legacy_algorithms: false,
     }
 }
 

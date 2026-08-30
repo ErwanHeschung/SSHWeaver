@@ -40,6 +40,7 @@ fn try_init() -> keyring_core::Result<()> {
 pub enum Key {
     Connection(String),
     Profile(String),
+    KeyFile(String),
 }
 
 impl Key {
@@ -51,6 +52,10 @@ impl Key {
         Key::Profile(id.to_string())
     }
 
+    pub fn key_file(path: &str) -> Self {
+        Key::KeyFile(path.to_string())
+    }
+
     pub fn is_connection(&self) -> bool {
         matches!(self, Key::Connection(_))
     }
@@ -59,6 +64,7 @@ impl Key {
         match self {
             Key::Connection(id) => id.clone(),
             Key::Profile(id) => format!("profile:{id}"),
+            Key::KeyFile(path) => format!("keyfile:{path}"),
         }
     }
 }

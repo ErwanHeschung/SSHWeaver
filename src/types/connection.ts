@@ -11,6 +11,7 @@ export interface Connection {
   port: number;
   username: string;
   profileId: string | null;
+  allowLegacyAlgorithms: boolean;
   status: ConnectionStatus;
   isFavorite: boolean;
   lastUsedAt: string | null;
