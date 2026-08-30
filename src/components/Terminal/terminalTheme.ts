@@ -12,12 +12,14 @@ function brighten(hex: string): string {
   }, "#");
 }
 
+export function roleColor(name: TerminalRole): string {
+  const { roleColors } = useTerminalSettingsStore.getState();
+  return roleColors[name] ?? DEFAULT_ROLE_COLORS[name];
+}
+
 export function readTerminalTheme(): ITheme {
   const cs = getComputedStyle(document.documentElement);
   const v = (name: string) => cs.getPropertyValue(name).trim();
-
-  const { roleColors } = useTerminalSettingsStore.getState();
-  const role = (name: TerminalRole) => roleColors[name] ?? DEFAULT_ROLE_COLORS[name];
 
   return {
     background: v("--bg"),
@@ -31,19 +33,19 @@ export function readTerminalTheme(): ITheme {
     scrollbarSliderActiveBackground: v("--accent-hover"),
 
     black: "#3b3b46",
-    red: role("error"),
-    green: role("success"),
-    yellow: role("warning"),
-    blue: role("info"),
+    red: roleColor("error"),
+    green: roleColor("success"),
+    yellow: roleColor("warning"),
+    blue: roleColor("info"),
     magenta: "#a78bfa",
     cyan: "#22d3ee",
     white: "#e4e4e7",
 
     brightBlack: "#6b6b74",
-    brightRed: brighten(role("error")),
-    brightGreen: brighten(role("success")),
-    brightYellow: brighten(role("warning")),
-    brightBlue: brighten(role("info")),
+    brightRed: brighten(roleColor("error")),
+    brightGreen: brighten(roleColor("success")),
+    brightYellow: brighten(roleColor("warning")),
+    brightBlue: brighten(roleColor("info")),
     brightMagenta: "#c4b5fd",
     brightCyan: "#67e8f9",
     brightWhite: "#f4f4f5",

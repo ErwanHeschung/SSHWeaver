@@ -1236,6 +1236,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "dsa"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c8573b60d07b5b5cecadc1f978c9b71d5504151e703cbb0439ee4ad301338f3"
+dependencies = [
+ "crypto-bigint",
+ "crypto-common 0.2.2",
+ "crypto-primes",
+ "der",
+ "digest 0.11.3",
+ "rfc6979",
+ "sha2 0.11.0",
+ "signature",
+ "zeroize",
+]
+
+[[package]]
 name = "dtoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4038,6 +4055,7 @@ dependencies = [
  "data-encoding",
  "delegate",
  "der",
+ "des",
  "digest 0.11.3",
  "ecdsa",
  "ed25519-dalek",
@@ -4812,6 +4830,7 @@ dependencies = [
  "argon2",
  "bcrypt-pbkdf",
  "ctutils",
+ "dsa",
  "ed25519-dalek",
  "hex",
  "hmac 0.13.0",
@@ -4831,7 +4850,7 @@ dependencies = [
 
 [[package]]
 name = "sshweaver"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "anyhow",
  "apple-native-keyring-store",

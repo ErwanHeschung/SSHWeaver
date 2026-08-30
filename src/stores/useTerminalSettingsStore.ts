@@ -22,13 +22,16 @@ export type TerminalRoleColors = Partial<Record<TerminalRole, string>>;
 
 const FONT_SIZE_KEY = "sshweaver-terminal-font-size";
 const ROLE_COLORS_KEY = "sshweaver-terminal-role-colors";
+const HIGHLIGHT_KEY = "sshweaver-terminal-highlight";
 
 interface TerminalSettingsState {
   fontSize: TerminalFontSize;
   roleColors: TerminalRoleColors;
+  highlight: boolean;
   setFontSize: (fontSize: TerminalFontSize) => void;
   setRoleColor: (role: TerminalRole, color: string) => void;
   resetRoleColors: () => void;
+  setHighlight: (highlight: boolean) => void;
 }
 
 function isFontSize(value: number): value is TerminalFontSize {
@@ -55,6 +58,7 @@ function storedRoleColors(): TerminalRoleColors {
 export const useTerminalSettingsStore = create<TerminalSettingsState>((set) => ({
   fontSize: storedFontSize(),
   roleColors: storedRoleColors(),
+  highlight: storage.getItem<boolean>(HIGHLIGHT_KEY, true),
 
   setFontSize: (fontSize) => {
     storage.setItem(FONT_SIZE_KEY, fontSize);
@@ -71,5 +75,10 @@ export const useTerminalSettingsStore = create<TerminalSettingsState>((set) => (
   resetRoleColors: () => {
     storage.removeItem(ROLE_COLORS_KEY);
     set({ roleColors: {} });
+  },
+
+  setHighlight: (highlight) => {
+    storage.setItem(HIGHLIGHT_KEY, highlight);
+    set({ highlight });
   },
 }));

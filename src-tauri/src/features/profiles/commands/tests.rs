@@ -24,6 +24,7 @@ fn connection(conn: &Connection, host: &str, username: &str, profile_id: Option<
             port: 22,
             username: username.into(),
             profile_id: profile_id.map(str::to_string),
+            allow_legacy_algorithms: false,
         },
     )
     .unwrap()
@@ -100,6 +101,7 @@ fn db_error_forwards_both_sentinels() {
             port: 22,
             username: "root".into(),
             profile_id: None,
+            allow_legacy_algorithms: false,
         },
     )
     .unwrap_err();

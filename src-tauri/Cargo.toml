@@ -1,6 +1,6 @@
 [package]
 name = "sshweaver"
-version = "0.2.1"
+version = "0.2.2"
 description = "A modern SSH and SFTP client"
 authors = ["Erwan Heschung <mailme@heschungerwan.dev>"]
 edition = "2021"
@@ -30,7 +30,15 @@ uuid = { version = "1.26.0", features = ["v4"] }
 tauri-specta = { version = ">=2.0.0-rc, <3", features = ["typescript", "derive"] }
 specta-typescript = "0.0.12"
 specta = ">=2.0.0-rc, <3"
-russh = { version = "0.63.1", default-features = false, features = ["ring", "flate2", "rsa"] }
+russh = { version = "0.63.1", default-features = false, features = [
+    "ring",
+    "flate2",
+    "rsa",
+    # Infra this talks to can be old: DSA host keys and 3des-cbc are the
+    # only thing some of it offers.
+    "dsa",
+    "des",
+] }
 russh-sftp = "2"
 tokio = { version = "1.53.1", features = ["sync", "macros", "io-util", "rt", "net", "time", "fs"] }
 anyhow = "1.0.104"

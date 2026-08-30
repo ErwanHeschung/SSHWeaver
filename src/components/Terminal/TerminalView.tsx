@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
@@ -16,7 +16,10 @@ import { useSessionStore } from "@stores/useSessionStore";
 import { useTerminalSettingsStore } from "@stores/useTerminalSettingsStore";
 import { setConnectionStatus } from "@stores/connectionStatus";
 import { terminalRepository } from "@repositories/terminalRepository";
-import { readTerminalTheme } from "./terminalTheme";
+import { readTerminalTheme, roleColor } from "./terminalTheme";
+import { TerminalContextMenu } from "./TerminalContextMenu";
+import type { TerminalMenuItem } from "./TerminalContextMenu";
+import { OutputHighlighter } from "./highlight";
 
 interface TerminalViewProps {
   session: TerminalSession;
@@ -32,20 +35,81 @@ const clipboardProvider: IClipboardProvider = {
   writeText: () => {},
 };
 
+// A terminal has no cut: the buffer is a program's output, not an editable
+// document. Only the line being edited can be cut, by walking the shell's own
+// cursor to the selection and erasing from there.
+function inputSelection(term: Terminal) {
+  const range = term.getSelectionPosition();
+  const text = term.getSelection();
+  const buffer = term.buffer.active;
+  const row = buffer.baseY + buffer.cursorY;
+  if (!range || !text || range.start.y !== row || range.end.y !== row) return null;
+  return { text, steps: range.start.x + text.length - buffer.cursorX };
+}
+
+function cutInputSelection(term: Terminal, sessionId: string) {
+  const selection = inputSelection(term);
+  if (!selection) return;
+
+  const { text, steps } = selection;
+  // Erase only once the text is safely on the clipboard.
+  void navigator.clipboard.writeText(text).then(() => {
+    const move = (steps < 0 ? "\x1b[D" : "\x1b[C").repeat(Math.abs(steps));
+    void terminalRepository.write(sessionId, move + "\x7f".repeat(text.length));
+    term.clearSelection();
+  });
+}
+
+function paste(term: Terminal) {
+  void navigator.clipboard.readText().then((text) => {
+    if (text) term.paste(text);
+  });
+}
+
 export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
   const { t } = useTranslation();
   const fontSize = useTerminalSettingsStore((s) => s.fontSize);
   const roleColors = useTerminalSettingsStore((s) => s.roleColors);
+  const highlight = useTerminalSettingsStore((s) => s.highlight);
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const searchRef = useRef<SearchAddon | null>(null);
+  const highlighterRef = useRef<OutputHighlighter | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const activeRef = useRef(active);
   activeRef.current = active;
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [menuAt, setMenuAt] = useState<{ x: number; y: number } | null>(null);
+  const closeMenu = useCallback(() => setMenuAt(null), []);
+
+  const menuItems = (term: Terminal): TerminalMenuItem[] => [
+    {
+      label: t("terminal.menu.copy"),
+      disabled: !term.hasSelection(),
+      run: () => {
+        void navigator.clipboard.writeText(term.getSelection());
+        term.focus();
+      },
+    },
+    {
+      label: t("terminal.menu.cut"),
+      disabled: !inputSelection(term),
+      run: () => {
+        cutInputSelection(term, session.id);
+        term.focus();
+      },
+    },
+    {
+      label: t("terminal.menu.paste"),
+      run: () => {
+        paste(term);
+        term.focus();
+      },
+    },
+  ];
 
   const findNext = (query: string) => {
     if (query) searchRef.current?.findNext(query);
@@ -70,6 +134,8 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
       fontSize: useTerminalSettingsStore.getState().fontSize,
       cursorBlink: true,
       theme: readTerminalTheme(),
+      // registerDecoration, which the output highlighter runs on, throws without this.
+      allowProposedApi: true,
     });
     termRef.current = term;
     const fit = new FitAddon();
@@ -93,6 +159,10 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
 
     fit.fit();
 
+    const highlighter = new OutputHighlighter(term, roleColor);
+    highlighterRef.current = highlighter;
+    highlighter.setEnabled(useTerminalSettingsStore.getState().highlight);
+
     term.attachCustomKeyEventHandler((e) => {
       if (e.type !== "keydown") return true;
       const mod = e.ctrlKey || e.metaKey;
@@ -113,11 +183,16 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
         return false;
       }
 
+      if ((e.shiftKey || e.metaKey) && (e.key === "x" || e.key === "X")) {
+        if (!term.hasSelection()) return true;
+        e.preventDefault();
+        cutInputSelection(term, session.id);
+        return false;
+      }
+
       if ((e.shiftKey || e.metaKey) && (e.key === "v" || e.key === "V")) {
         e.preventDefault();
-        void navigator.clipboard.readText().then((text) => {
-          if (text) term.paste(text);
-        });
+        paste(term);
         return false;
       }
 
@@ -190,6 +265,8 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
       unlistenClosed?.();
       resizeObserver.disconnect();
       themeObserver.disconnect();
+      highlighter.dispose();
+      highlighterRef.current = null;
       term.dispose();
       termRef.current = null;
 
@@ -250,7 +327,12 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
     const term = termRef.current;
     if (!term) return;
     term.options.theme = readTerminalTheme();
+    highlighterRef.current?.refresh();
   }, [roleColors]);
+
+  useEffect(() => {
+    highlighterRef.current?.setEnabled(highlight);
+  }, [highlight]);
 
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.select();
@@ -258,9 +340,24 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
 
   return (
     <div className={`absolute inset-0 p-2 ${active ? "" : "invisible"}`}>
-      <div ref={containerRef} className="h-full w-full" />
+      <div
+        ref={containerRef}
+        className="isolate h-full w-full"
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setMenuAt({ x: e.clientX, y: e.clientY });
+        }}
+      />
+      {menuAt && termRef.current && (
+        <TerminalContextMenu
+          x={menuAt.x}
+          y={menuAt.y}
+          items={menuItems(termRef.current)}
+          onClose={closeMenu}
+        />
+      )}
       {searchOpen && (
-        <div className="absolute right-3 top-3 flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-1 shadow-md">
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-md border border-border bg-background px-1.5 py-1 shadow-md">
           <input
             ref={searchInputRef}
             value={searchQuery}
@@ -285,7 +382,7 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
             type="button"
             onClick={() => findPrevious(searchQuery)}
             title={t("terminal.search.previous")}
-            className="rounded px-1.5 py-0.5 text-muted hover:bg-muted/20 hover:text-foreground"
+            className="cursor-pointer rounded px-1.5 py-0.5 text-muted hover:bg-muted/20 hover:text-foreground"
           >
             ↑
           </button>
@@ -293,7 +390,7 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
             type="button"
             onClick={() => findNext(searchQuery)}
             title={t("terminal.search.next")}
-            className="rounded px-1.5 py-0.5 text-muted hover:bg-muted/20 hover:text-foreground"
+            className="cursor-pointer rounded px-1.5 py-0.5 text-muted hover:bg-muted/20 hover:text-foreground"
           >
             ↓
           </button>
@@ -301,7 +398,7 @@ export function TerminalView({ session, active }: Readonly<TerminalViewProps>) {
             type="button"
             onClick={closeSearch}
             title={t("terminal.search.close")}
-            className="rounded px-1.5 py-0.5 text-muted hover:bg-muted/20 hover:text-foreground"
+            className="cursor-pointer rounded px-1.5 py-0.5 text-muted hover:bg-muted/20 hover:text-foreground"
           >
             ✕
           </button>
