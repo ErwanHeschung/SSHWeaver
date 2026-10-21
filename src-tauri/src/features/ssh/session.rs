@@ -252,6 +252,13 @@ fn accepts(result: &AuthResult, method: MethodKind) -> bool {
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(20);
 
+/// russh asks for 3072..8192-bit groups by default, but switches commonly hold
+/// only 2048-bit moduli and the handshake dies on their reply. 2048 is the
+/// lowest floor russh accepts and what OpenSSH asks for.
+fn gex_params() -> client::GexParams {
+    client::GexParams::new(2048, 4096, 8192).expect("valid GEX bounds")
+}
+
 /// Modern algorithms only, unless the connection opted into the legacy tail.
 ///
 /// The old names are what network gear (Arista EOS, classic IOS) offers instead
@@ -263,15 +270,17 @@ fn preferred(allow_legacy: bool) -> Preferred {
         kex::MLKEM768X25519_SHA256,
         kex::CURVE25519,
         kex::CURVE25519_PRE_RFC_8731,
+        // ECDH before any DH, as OpenSSH ranks them: a switch without
+        // curve25519 then never falls into group exchange.
+        kex::ECDH_SHA2_NISTP256,
+        kex::ECDH_SHA2_NISTP384,
+        kex::ECDH_SHA2_NISTP521,
         kex::DH_GEX_SHA256,
         kex::DH_G18_SHA512,
         kex::DH_G17_SHA512,
         kex::DH_G16_SHA512,
         kex::DH_G15_SHA512,
         kex::DH_G14_SHA256,
-        kex::ECDH_SHA2_NISTP521,
-        kex::ECDH_SHA2_NISTP384,
-        kex::ECDH_SHA2_NISTP256,
     ];
     let mut key = vec![
         ssh_key::Algorithm::Ed25519,
@@ -424,6 +433,7 @@ pub async fn open(app: AppHandle, params: ConnectParams) -> anyhow::Result<Conne
         keepalive_interval: Some(Duration::from_secs(30)),
         keepalive_max: 3,
         preferred: preferred(params.allow_legacy_algorithms),
+        gex: gex_params(),
         ..Default::default()
     });
 

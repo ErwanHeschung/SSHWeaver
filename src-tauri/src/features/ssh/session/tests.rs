@@ -126,6 +126,19 @@ fn opting_in_offers_every_algorithm_old_gear_speaks() {
 }
 
 #[test]
+fn group_exchange_accepts_the_2048_bit_groups_switches_hold() {
+    assert_eq!(gex_params().min_group_size(), 2048);
+}
+
+#[test]
+fn ecdh_is_offered_before_group_exchange() {
+    let kex = preferred(false).kex;
+    let rank = |name| kex.iter().position(|k| *k == name).unwrap();
+
+    assert!(rank(kex::ECDH_SHA2_NISTP256) < rank(kex::DH_GEX_SHA256));
+}
+
+#[test]
 fn the_modern_algorithms_keep_their_rank_either_way() {
     let strict = preferred(false);
     let legacy = preferred(true);
