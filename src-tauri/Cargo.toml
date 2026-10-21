@@ -1,6 +1,6 @@
 [package]
 name = "sshweaver"
-version = "0.2.2"
+version = "0.2.3"
 description = "A modern SSH and SFTP client"
 authors = ["Erwan Heschung <mailme@heschungerwan.dev>"]
 edition = "2021"
